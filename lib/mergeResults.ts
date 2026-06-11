@@ -82,6 +82,7 @@ export function mergeResults(existing: AnalysisResult, incoming: AnalysisResult)
       critical_missing_count: merged_missing.filter((p) => p.criticality === "CRITICAL").length,
       important_missing_count: merged_missing.filter((p) => p.criticality === "IMPORTANT").length,
       routine_missing_count: merged_missing.filter((p) => p.criticality === "ROUTINE").length,
+      visually_identified_count: merged_missing.filter((p) => p.source === "visual_inspection").length,
     },
     matched: merged_matched,
     missing_from_cmms: merged_missing,

@@ -139,7 +139,7 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
 
       {/* Inline add-documents panel */}
       {addDocsOpen && (
-        <div className="mb-6 bg-white rounded-2xl border border-blue-200 shadow-sm overflow-hidden">
+        <div className="mb-6 bg-white rounded-2xl border border-sky-200 shadow-sm overflow-hidden">
           <div className="px-6 pt-5 pb-4 border-b border-slate-100">
             <p className="text-sm font-semibold text-slate-700">Add OEM Documents</p>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -182,7 +182,7 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
               className={[
                 "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
                 newOemFiles.length && !analyzing
-                  ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm cursor-pointer"
+                  ? "bg-sky-500 text-white hover:bg-sky-600 shadow-sm cursor-pointer"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed",
               ].join(" ")}
             >
@@ -223,8 +223,13 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
       </div>
 
       {summary.critical_missing_count > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700 font-medium mb-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700 font-medium mb-3">
           {summary.critical_missing_count} critical part{summary.critical_missing_count > 1 ? "s are" : " is"} missing from your CMMS — immediate attention recommended.
+        </div>
+      )}
+      {(summary.visually_identified_count ?? 0) > 0 && (
+        <div className="bg-violet-50 border border-violet-200 rounded-xl px-5 py-3 text-sm text-violet-700 font-medium mb-6">
+          {summary.visually_identified_count} part{summary.visually_identified_count === 1 ? "" : "s"} identified from visual inspection of drawings — not listed in any parts table.
         </div>
       )}
 
@@ -276,10 +281,18 @@ function MissingSection({ items, showSource }: { items: Asset["result"]["missing
                     </span>
                   )}
                   <span className="text-sm font-medium text-slate-800">{item.oem_description}</span>
+                  {item.source === "visual_inspection" && (
+                    <span className="text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">
+                      Visual
+                    </span>
+                  )}
                   {showSource && <SourceBadge doc={item.source_doc} />}
                 </div>
                 <p className="text-xs text-slate-500 mt-1.5">{item.reason}</p>
-                <p className="text-xs text-blue-600 mt-1">{item.recommendation}</p>
+                {item.visual_note && (
+                  <p className="text-xs text-violet-600 mt-1 italic">{item.visual_note}</p>
+                )}
+                <p className="text-xs text-sky-600 mt-1">{item.recommendation}</p>
               </div>
               <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded border ${CRITICALITY_STYLES[item.criticality]}`}>
                 {item.criticality}
@@ -333,7 +346,7 @@ function MatchedSection({ items, showSource }: { items: Asset["result"]["matched
         ))}
       </div>
       {items.length > 4 && (
-        <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-blue-600 hover:underline cursor-pointer">
+        <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-sky-600 hover:underline cursor-pointer">
           {open ? "Show less" : `Show all ${items.length} matched parts`}
         </button>
       )}
@@ -365,7 +378,7 @@ function ExtraSection({ items }: { items: Asset["result"]["extra_in_cmms"] }) {
         ))}
       </div>
       {items.length > 4 && (
-        <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-blue-600 hover:underline cursor-pointer">
+        <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-sky-600 hover:underline cursor-pointer">
           {open ? "Show less" : `Show all ${items.length} extra entries`}
         </button>
       )}

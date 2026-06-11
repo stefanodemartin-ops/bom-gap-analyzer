@@ -99,7 +99,7 @@ export default function AssetList({ session, assets, onAddAsset, onSelectAsset, 
           )}
           <button
             onClick={onAddAsset}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sky-500 text-white text-sm font-semibold hover:bg-sky-600 shadow-sm transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -120,7 +120,7 @@ export default function AssetList({ session, assets, onAddAsset, onSelectAsset, 
             </svg>
           </div>
           <p className="text-slate-600 font-medium">No assets analyzed yet</p>
-          <p className="text-sm text-slate-400 mt-1">Click "Add Asset" to analyze your first OEM document.</p>
+          <p className="text-sm text-slate-400 mt-1">Click &ldquo;Add Asset&rdquo; to analyze your first OEM document.</p>
         </div>
       )}
 
@@ -133,11 +133,11 @@ export default function AssetList({ session, assets, onAddAsset, onSelectAsset, 
               <button
                 key={asset.id}
                 onClick={() => onSelectAsset(asset.id)}
-                className="text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:border-blue-300 hover:shadow-md transition-all duration-150 cursor-pointer group"
+                className="text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:border-sky-300 hover:shadow-md transition-all duration-150 cursor-pointer group"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-800 group-hover:text-blue-700 transition-colors">{asset.name}</p>
+                    <p className="font-semibold text-slate-800 group-hover:text-sky-600 transition-colors">{asset.name}</p>
                     <p className="text-xs text-slate-400 mt-0.5 truncate">
                       {asset.oemFileNames.join(", ")}
                     </p>

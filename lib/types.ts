@@ -14,6 +14,8 @@ export type MissingPart = {
   criticality: "CRITICAL" | "IMPORTANT" | "ROUTINE";
   reason: string;
   recommendation: string;
+  source?: "parts_table" | "visual_inspection";
+  visual_note?: string | null;
   source_doc?: string;
 };
 
@@ -36,6 +38,7 @@ export type AnalysisResult = {
     critical_missing_count: number;
     important_missing_count: number;
     routine_missing_count: number;
+    visually_identified_count?: number;
   };
   matched: MatchedPart[];
   missing_from_cmms: MissingPart[];

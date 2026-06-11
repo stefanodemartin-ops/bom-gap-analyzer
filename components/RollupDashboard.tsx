@@ -71,7 +71,7 @@ export default function RollupDashboard({ session, assets, onBack, onSelectAsset
       {/* Aggregate stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
         {[
-          { label: "Overall Match Rate", value: pct(overallMatchRate), color: "text-blue-600" },
+          { label: "Overall Match Rate", value: pct(overallMatchRate), color: "text-sky-600" },
           { label: "Total Matched", value: totalMatched, color: "text-emerald-600" },
           { label: "Total Missing", value: totalMissing, color: "text-red-600" },
           { label: "Critical Missing", value: totalCritical, color: "text-red-700" },
@@ -86,7 +86,7 @@ export default function RollupDashboard({ session, assets, onBack, onSelectAsset
       {/* Per-asset breakdown */}
       <section className="mb-10">
         <h3 className="text-sm font-semibold text-slate-700 mb-4">Per-Asset Breakdown</h3>
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-xs text-slate-400 font-medium">
@@ -152,9 +152,9 @@ export default function RollupDashboard({ session, assets, onBack, onSelectAsset
             <span className="text-xs font-normal text-slate-400">({duplicates.length})</span>
           </h3>
           <p className="text-xs text-slate-400 mb-3">
-            These OEM part numbers appear in more than one asset's document — possible shared spares or consolidation opportunity.
+            These OEM part numbers appear in more than one asset&rsquo;s document — possible shared spares or consolidation opportunity.
           </p>
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-xs text-slate-400 font-medium">

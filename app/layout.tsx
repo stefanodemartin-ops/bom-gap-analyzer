@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BOM Gap Analyzer",
-  description: "OEM vs CMMS parts reconciliation",
+  title: "SparesView",
+  description: "Spare Parts Intelligence",
 };
 
 export default function RootLayout({

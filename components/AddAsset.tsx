@@ -11,10 +11,18 @@ type Props = {
   onComplete: (asset: Asset) => void;
 };
 
+const ANALYSIS_STEPS = [
+  "Reading OEM documents",
+  "Extracting parts and part numbers",
+  "Comparing against your CMMS export",
+  "Classifying gaps and criticality",
+];
+
 export default function AddAsset({ session, onBack, onComplete }: Props) {
   const [assetName, setAssetName] = useState("");
   const [oemFiles, setOemFiles] = useState<File[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const canAnalyze = assetName.trim() && oemFiles.length > 0;
@@ -22,7 +30,15 @@ export default function AddAsset({ session, onBack, onComplete }: Props) {
   const handleAnalyze = async () => {
     if (!canAnalyze) return;
     setAnalyzing(true);
+    setAnalysisStep(0);
     setError(null);
+
+    // Advance the displayed step on a timer while the API call runs
+    const stepTimers = [
+      setTimeout(() => setAnalysisStep(1), 6000),
+      setTimeout(() => setAnalysisStep(2), 14000),
+      setTimeout(() => setAnalysisStep(3), 24000),
+    ];
 
     try {
       const body = new FormData();
@@ -48,6 +64,7 @@ export default function AddAsset({ session, onBack, onComplete }: Props) {
     } catch {
       setError("Network error — is the dev server running?");
     } finally {
+      stepTimers.forEach(clearTimeout);
       setAnalyzing(false);
     }
   };
@@ -82,7 +99,7 @@ export default function AddAsset({ session, onBack, onComplete }: Props) {
               onChange={(e) => setAssetName(e.target.value)}
               placeholder="e.g. Centrifugal Pump P-101"
               disabled={analyzing}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent disabled:opacity-50"
             />
           </div>
 
@@ -104,6 +121,43 @@ export default function AddAsset({ session, onBack, onComplete }: Props) {
           />
         </div>
 
+        {analyzing && (
+          <div className="mx-8 mb-6 rounded-xl border border-sky-100 bg-sky-50/60 px-6 py-5">
+            <div className="flex items-center gap-3 mb-4">
+              <svg className="w-5 h-5 text-sky-600 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+              </svg>
+              <p className="text-sm font-semibold text-slate-700">
+                Analyzing {assetName.trim() || "asset"}…
+              </p>
+            </div>
+            <ul className="flex flex-col gap-2">
+              {ANALYSIS_STEPS.map((step, i) => (
+                <li key={step} className="flex items-center gap-2.5 text-sm">
+                  {i < analysisStep ? (
+                    <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  ) : i === analysisStep ? (
+                    <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                    </span>
+                  ) : (
+                    <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-slate-200" />
+                    </span>
+                  )}
+                  <span className={i <= analysisStep ? "text-slate-700" : "text-slate-400"}>{step}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-slate-400 mt-4">
+              AI analysis typically takes 20–60 seconds depending on document size.
+            </p>
+          </div>
+        )}
+
         {error && (
           <div className="mx-8 mb-4 bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700">
             <span className="font-semibold">Error: </span>{error}
@@ -122,7 +176,7 @@ export default function AddAsset({ session, onBack, onComplete }: Props) {
             className={[
               "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150",
               canAnalyze && !analyzing
-                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm cursor-pointer"
+                ? "bg-sky-500 text-white hover:bg-sky-600 shadow-sm cursor-pointer"
                 : "bg-slate-200 text-slate-400 cursor-not-allowed",
             ].join(" ")}
           >

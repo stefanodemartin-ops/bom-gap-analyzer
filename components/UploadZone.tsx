@@ -107,7 +107,7 @@ export default function UploadZone({
           disabled
             ? "cursor-not-allowed opacity-50 border-slate-200 bg-slate-50"
             : dragging
-            ? "cursor-pointer border-blue-400 bg-blue-50"
+            ? "cursor-pointer border-sky-400 bg-sky-50"
             : !multiple && hasFiles
             ? "cursor-pointer border-emerald-400 bg-emerald-50"
             : "cursor-pointer border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white",
@@ -137,8 +137,8 @@ export default function UploadZone({
           </>
         ) : (
           <>
-            <div className={["flex items-center justify-center w-10 h-10 rounded-full transition-colors", dragging ? "bg-blue-100" : "bg-slate-100"].join(" ")}>
-              <svg className={["w-5 h-5 transition-colors", dragging ? "text-blue-500" : "text-slate-400"].join(" ")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className={["flex items-center justify-center w-10 h-10 rounded-full transition-colors", dragging ? "bg-sky-100" : "bg-slate-100"].join(" ")}>
+              <svg className={["w-5 h-5 transition-colors", dragging ? "text-sky-500" : "text-slate-400"].join(" ")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
               </svg>
             </div>
