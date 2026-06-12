@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import UploadZone from "./UploadZone";
 import { Session } from "@/lib/types";
-import { getRecentSessions, RecentSession } from "@/lib/persistence";
+import {
+  getRecentSessionsSnapshot,
+  getServerRecentsSnapshot,
+  subscribeToRecents,
+} from "@/lib/persistence";
 
 type Props = {
   onContinue: (session: Session) => void;
@@ -12,12 +16,12 @@ type Props = {
 };
 
 export default function StartScreen({ onContinue, onLoadSample, onOpenSession }: Props) {
-  const [recents, setRecents] = useState<RecentSession[]>([]);
-
-  // localStorage is browser-only — read it after mount to avoid hydration mismatch
-  useEffect(() => {
-    setRecents(getRecentSessions());
-  }, []);
+  // localStorage is browser-only; the server snapshot renders an empty list
+  const recents = useSyncExternalStore(
+    subscribeToRecents,
+    getRecentSessionsSnapshot,
+    getServerRecentsSnapshot
+  );
   const [clientName, setClientName] = useState("");
   const [plantName, setPlantName] = useState("");
   const [cmmsFile, setCmmsFile] = useState<File | null>(null);

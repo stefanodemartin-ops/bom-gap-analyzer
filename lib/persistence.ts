@@ -19,6 +19,38 @@ export function getRecentSessions(): RecentSession[] {
   }
 }
 
+// Snapshot helpers for useSyncExternalStore: the snapshot must be referentially
+// stable between calls, so cache the parsed list keyed on the raw string.
+const EMPTY_RECENTS: RecentSession[] = [];
+let recentsCache: { raw: string | null; value: RecentSession[] } = { raw: null, value: EMPTY_RECENTS };
+
+export function getRecentSessionsSnapshot(): RecentSession[] {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(RECENTS_KEY);
+  } catch {
+    return EMPTY_RECENTS;
+  }
+  if (raw !== recentsCache.raw) {
+    let value: RecentSession[] = EMPTY_RECENTS;
+    try {
+      value = raw ? (JSON.parse(raw) as RecentSession[]) : EMPTY_RECENTS;
+    } catch {
+      value = EMPTY_RECENTS;
+    }
+    recentsCache = { raw, value };
+  }
+  return recentsCache.value;
+}
+
+export function getServerRecentsSnapshot(): RecentSession[] {
+  return EMPTY_RECENTS;
+}
+
+export function subscribeToRecents(): () => void {
+  return () => {};
+}
+
 /** Add or refresh an entry in the recent-sessions list kept in this browser. */
 export function rememberSession(id: string, clientName: string, plantName: string) {
   try {
