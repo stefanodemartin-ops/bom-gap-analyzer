@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Asset, Session } from "@/lib/types";
+import { SAMPLE_SESSION, SAMPLE_ASSETS } from "@/lib/sampleData";
 import StartScreen from "@/components/StartScreen";
 import AssetList from "@/components/AssetList";
 import AddAsset from "@/components/AddAsset";
@@ -21,6 +22,12 @@ export default function Home() {
   const handleSessionStart = (s: Session) => {
     setSession(s);
     setAssets([]);
+    setView("asset-list");
+  };
+
+  const handleLoadSample = () => {
+    setSession(SAMPLE_SESSION);
+    setAssets(SAMPLE_ASSETS);
     setView("asset-list");
   };
 
@@ -86,7 +93,7 @@ export default function Home() {
 
       {/* View router */}
       {view === "start" && (
-        <StartScreen onContinue={handleSessionStart} />
+        <StartScreen onContinue={handleSessionStart} onLoadSample={handleLoadSample} />
       )}
 
       {view === "asset-list" && session && (
