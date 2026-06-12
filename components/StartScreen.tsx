@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import UploadZone from "./UploadZone";
 import { Session } from "@/lib/types";
+import { getRecentSessions, RecentSession } from "@/lib/persistence";
 
 type Props = {
   onContinue: (session: Session) => void;
   onLoadSample: () => void;
+  onOpenSession: (id: string) => void;
 };
 
-export default function StartScreen({ onContinue, onLoadSample }: Props) {
+export default function StartScreen({ onContinue, onLoadSample, onOpenSession }: Props) {
+  const [recents, setRecents] = useState<RecentSession[]>([]);
+
+  // localStorage is browser-only — read it after mount to avoid hydration mismatch
+  useEffect(() => {
+    setRecents(getRecentSessions());
+  }, []);
   const [clientName, setClientName] = useState("");
   const [plantName, setPlantName] = useState("");
   const [cmmsFile, setCmmsFile] = useState<File | null>(null);
@@ -129,6 +137,33 @@ export default function StartScreen({ onContinue, onLoadSample }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Recent sessions */}
+      {recents.length > 0 && (
+        <div className="w-full max-w-lg mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <p className="px-6 pt-4 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wide">
+            Recent sessions on this computer
+          </p>
+          <ul>
+            {recents.map((r) => (
+              <li key={r.id}>
+                <button
+                  onClick={() => onOpenSession(r.id)}
+                  className="w-full flex items-center justify-between gap-3 px-6 py-3 text-left hover:bg-slate-50 transition-colors cursor-pointer border-t border-slate-100"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-slate-700 truncate">{r.clientName}</span>
+                    <span className="block text-xs text-slate-400 truncate">{r.plantName}</span>
+                  </span>
+                  <span className="text-xs text-slate-400 shrink-0">
+                    {new Date(r.savedAt).toLocaleDateString()}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Sample analysis entry point */}
       <button

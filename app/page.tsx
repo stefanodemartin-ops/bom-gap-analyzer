@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Asset, Session } from "@/lib/types";
 import { SAMPLE_SESSION, SAMPLE_ASSETS } from "@/lib/sampleData";
+import { rememberSession, saveAssets } from "@/lib/persistence";
 import StartScreen from "@/components/StartScreen";
 import AssetList from "@/components/AssetList";
 import AddAsset from "@/components/AddAsset";
@@ -14,30 +15,88 @@ type View = "start" | "asset-list" | "add-asset" | "asset-detail" | "rollup";
 export default function Home() {
   const [view, setView] = useState<View>("start");
   const [session, setSession] = useState<Session | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const selectedAsset = assets.find((a) => a.id === selectedAssetId) ?? null;
 
-  const handleSessionStart = (s: Session) => {
+  const loadSessionById = async (id: string) => {
+    setRestoring(true);
+    try {
+      const res = await fetch(`/api/sessions/${id}`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      setSession({
+        clientName: data.clientName,
+        plantName: data.plantName,
+        cmmsFileName: data.cmmsFileName,
+        cmmsRowCount: data.cmmsRowCount,
+        cmmsText: data.cmmsText,
+      });
+      setAssets(data.assets ?? []);
+      setSessionId(id);
+      window.history.replaceState(null, "", `?s=${id}`);
+      rememberSession(id, data.clientName, data.plantName);
+      setView("asset-list");
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  // Restore a saved session if the URL carries ?s=<id>
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("s");
+    if (id) loadSessionById(id);
+  }, []);
+
+  const handleSessionStart = async (s: Session) => {
     setSession(s);
     setAssets([]);
+    setSessionId(null);
     setView("asset-list");
+
+    // Persist in the background — the app keeps working even if saving fails
+    try {
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...s, assets: [] }),
+      });
+      if (res.ok) {
+        const { id } = await res.json();
+        setSessionId(id);
+        window.history.replaceState(null, "", `?s=${id}`);
+        rememberSession(id, s.clientName, s.plantName);
+      }
+    } catch {
+      console.warn("[persistence] could not save session — continuing in memory only");
+    }
   };
 
   const handleLoadSample = () => {
     setSession(SAMPLE_SESSION);
     setAssets(SAMPLE_ASSETS);
+    setSessionId(null);
+    window.history.replaceState(null, "", window.location.pathname);
     setView("asset-list");
   };
 
   const handleAssetComplete = (asset: Asset) => {
-    setAssets((prev) => [...prev, asset]);
+    const next = [...assets, asset];
+    setAssets(next);
+    saveAssets(sessionId, next);
     setView("asset-list");
   };
 
   const handleUpdateAsset = (updated: Asset) => {
-    setAssets((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    const next = assets.map((a) => (a.id === updated.id ? updated : a));
+    setAssets(next);
+    saveAssets(sessionId, next);
   };
 
   const handleSelectAsset = (id: string) => {
@@ -81,6 +140,8 @@ export default function Home() {
                 setSession(null);
                 setAssets([]);
                 setSelectedAssetId(null);
+                setSessionId(null);
+                window.history.replaceState(null, "", window.location.pathname);
                 setView("start");
               }}
               className="ml-auto text-xs text-slate-300 hover:text-white border border-[#3a5580] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#253d6a] transition-colors"
@@ -92,8 +153,21 @@ export default function Home() {
       </header>
 
       {/* View router */}
-      {view === "start" && (
-        <StartScreen onContinue={handleSessionStart} onLoadSample={handleLoadSample} />
+      {view === "start" && restoring && (
+        <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center gap-3">
+          <svg className="w-6 h-6 text-sky-500 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+          </svg>
+          <p className="text-sm text-slate-500">Loading saved session…</p>
+        </div>
+      )}
+      {view === "start" && !restoring && (
+        <StartScreen
+          onContinue={handleSessionStart}
+          onLoadSample={handleLoadSample}
+          onOpenSession={loadSessionById}
+        />
       )}
 
       {view === "asset-list" && session && (
