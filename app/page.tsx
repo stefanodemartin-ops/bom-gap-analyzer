@@ -4,16 +4,21 @@ import { useEffect, useState } from "react";
 import { Asset, Session } from "@/lib/types";
 import { SAMPLE_SESSION, SAMPLE_ASSETS } from "@/lib/sampleData";
 import { rememberSession, saveAssets } from "@/lib/persistence";
+import ServiceChooser from "@/components/ServiceChooser";
+import ComingSoon from "@/components/ComingSoon";
 import StartScreen from "@/components/StartScreen";
 import AssetList from "@/components/AssetList";
 import AddAsset from "@/components/AddAsset";
 import AssetDetail from "@/components/AssetDetail";
 import RollupDashboard from "@/components/RollupDashboard";
 
-type View = "start" | "asset-list" | "add-asset" | "asset-detail" | "rollup";
+type View = "home" | "minmax" | "start" | "asset-list" | "add-asset" | "asset-detail" | "rollup";
+
+// Views that belong to the BOM Gap Analysis service (header shows session + New Session)
+const BOM_SERVICE_VIEWS: View[] = ["asset-list", "add-asset", "asset-detail", "rollup"];
 
 export default function Home() {
-  const [view, setView] = useState<View>("start");
+  const [view, setView] = useState<View>("home");
   const [session, setSession] = useState<Session | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -110,8 +115,8 @@ export default function Home() {
       <header className="bg-[#1B2A4A] border-b border-[#253d6a] sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center gap-3">
           <button
-            onClick={() => view !== "start" && setView("asset-list")}
-            className={["flex items-center gap-3", view !== "start" ? "cursor-pointer" : ""].join(" ")}
+            onClick={() => setView("home")}
+            className="flex items-center gap-3 cursor-pointer"
           >
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500 shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -124,7 +129,7 @@ export default function Home() {
             </div>
           </button>
 
-          {session && view !== "start" && (
+          {session && BOM_SERVICE_VIEWS.includes(view) && (
             <>
               <span className="text-[#3a5580] ml-2 text-lg font-light">|</span>
               <div className="ml-1">
@@ -134,7 +139,7 @@ export default function Home() {
             </>
           )}
 
-          {view !== "start" && (
+          {BOM_SERVICE_VIEWS.includes(view) && (
             <button
               onClick={() => {
                 setSession(null);
@@ -153,7 +158,7 @@ export default function Home() {
       </header>
 
       {/* View router */}
-      {view === "start" && restoring && (
+      {restoring && (
         <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center gap-3">
           <svg className="w-6 h-6 text-sky-500 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -162,11 +167,22 @@ export default function Home() {
           <p className="text-sm text-slate-500">Loading saved session…</p>
         </div>
       )}
-      {view === "start" && !restoring && (
+
+      {!restoring && view === "home" && (
+        <ServiceChooser
+          onChooseBom={() => setView("start")}
+          onChooseMinMax={() => setView("minmax")}
+        />
+      )}
+
+      {!restoring && view === "minmax" && <ComingSoon onBack={() => setView("home")} />}
+
+      {!restoring && view === "start" && (
         <StartScreen
           onContinue={handleSessionStart}
           onLoadSample={handleLoadSample}
           onOpenSession={loadSessionById}
+          onBack={() => setView("home")}
         />
       )}
 

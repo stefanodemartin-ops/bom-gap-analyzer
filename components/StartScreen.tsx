@@ -13,9 +13,10 @@ type Props = {
   onContinue: (session: Session) => void;
   onLoadSample: () => void;
   onOpenSession: (id: string) => void;
+  onBack: () => void;
 };
 
-export default function StartScreen({ onContinue, onLoadSample, onOpenSession }: Props) {
+export default function StartScreen({ onContinue, onLoadSample, onOpenSession, onBack }: Props) {
   // localStorage is browser-only; the server snapshot renders an empty list
   const recents = useSyncExternalStore(
     subscribeToRecents,
@@ -52,18 +53,30 @@ export default function StartScreen({ onContinue, onLoadSample, onOpenSession }:
   };
 
   return (
-    <div className="min-h-[calc(100vh-57px)] bg-slate-50 flex flex-col items-center justify-center px-6 py-14">
+    <div className="min-h-[calc(100vh-57px)] bg-slate-50 flex flex-col items-center px-6 py-10">
+      {/* Back to services */}
+      <div className="w-full max-w-lg">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6 cursor-pointer transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Back to services
+        </button>
+      </div>
+
       {/* Hero */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1B2A4A] mb-5 shadow-md">
-          <svg className="w-7 h-7 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 mb-4">
+          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
           </svg>
         </div>
-        <h1 className="text-4xl font-extrabold text-[#1B2A4A] tracking-tight leading-none">
-          SparesView
+        <h1 className="text-3xl font-extrabold text-[#1B2A4A] tracking-tight leading-none">
+          BOM Gap Analysis
         </h1>
-        <p className="text-lg text-slate-500 mt-2 font-medium">Spare Parts Intelligence</p>
         <p className="text-sm text-slate-400 mt-3 max-w-sm mx-auto leading-relaxed">
           Surface gaps between OEM parts lists and your CMMS before they cause unplanned downtime.
         </p>
