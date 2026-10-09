@@ -1,7 +1,7 @@
 // Site-wide marketing configuration.
 // Edit prices, contact details, and the booking link here — nothing else to touch.
 
-export const CONTACT_EMAIL = "stefanodemartin@gmail.com";
+export const CONTACT_EMAIL = "stefano@stefanodemartin.com";
 
 // Paste your Calendly (or Google Calendar appointment) link here when ready.
 // While empty, the "Book a demo" flow shows the contact form only.
