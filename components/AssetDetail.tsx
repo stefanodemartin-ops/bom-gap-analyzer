@@ -23,6 +23,14 @@ const CRITICALITY_STYLES = {
   ROUTINE: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
+const SOURCING_LABELS: Record<string, string> = {
+  distributor_stock: "Distributor stock",
+  oem_configured: "OEM configured",
+  oem_proprietary: "OEM proprietary",
+  fabricate: "Fabricate from drawing",
+  unknown: "Sourcing unknown",
+};
+
 function exportMissingParts(asset: Asset) {
   const order = { CRITICAL: 0, IMPORTANT: 1, ROUTINE: 2 };
   const sorted = [...asset.result.missing_from_cmms].sort(
@@ -32,12 +40,13 @@ function exportMissingParts(asset: Asset) {
     "OEM Part Number": item.oem_part_number ?? "",
     "OEM Description": item.oem_description,
     "Criticality": item.criticality,
-    "Category": "",
+    "Sourcing": item.sourcing_category ? SOURCING_LABELS[item.sourcing_category] ?? item.sourcing_category : "",
+    "Typical Lead Time": item.lead_time_estimate ?? "",
     "Reason": item.reason,
     "Recommendation": item.recommendation,
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws["!cols"] = [{ wch: 18 }, { wch: 40 }, { wch: 12 }, { wch: 20 }, { wch: 50 }, { wch: 50 }];
+  ws["!cols"] = [{ wch: 18 }, { wch: 40 }, { wch: 12 }, { wch: 20 }, { wch: 16 }, { wch: 50 }, { wch: 50 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Missing Parts");
   const slug = asset.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
@@ -123,9 +132,9 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
   const multiDoc = asset.oemFileNames.length > 1;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Top bar */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <button
           onClick={onBack}
           className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 cursor-pointer transition-colors"
@@ -136,10 +145,20 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
           Back to asset list
         </button>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setAddDocsOpen((o) => !o); setError(null); setNewOemFiles([]); }}
+            disabled={analyzing}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-sm border border-slate-300 text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add Documents
+          </button>
           {result.missing_from_cmms.length > 0 && (
             <button
               onClick={() => exportMissingParts(asset)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-sm border border-slate-300 text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -151,10 +170,10 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
             onClick={handleDownloadReport}
             disabled={generatingReport}
             className={[
-              "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors",
+              "inline-flex items-center gap-1.5 px-3 py-2 rounded-sm text-sm font-semibold transition-colors",
               generatingReport
                 ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                : "bg-sky-500 text-white hover:bg-sky-600 shadow-sm cursor-pointer",
+                : "bg-sky-500 text-white hover:bg-sky-600 cursor-pointer",
             ].join(" ")}
           >
             {generatingReport ? (
@@ -172,29 +191,34 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
         </div>
       </div>
 
-      {/* Asset header */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">{asset.name}</h2>
-          <p className="text-xs text-slate-400 mt-0.5">{asset.oemFileNames.join(" · ")}</p>
-          <p className="text-xs text-slate-400">{result.equipment_identified}</p>
+      {/* Title block — styled like the corner block of an engineering drawing */}
+      <div className="bg-white border border-slate-300 rounded-sm mb-5">
+        <div className="grid grid-cols-[110px_1fr] sm:grid-cols-[130px_1fr]">
+          <TitleBlockLabel>Asset</TitleBlockLabel>
+          <TitleBlockValue>
+            <span className="text-base font-bold text-slate-800">{asset.name}</span>
+          </TitleBlockValue>
+          <TitleBlockLabel>Equipment</TitleBlockLabel>
+          <TitleBlockValue>{result.equipment_identified}</TitleBlockValue>
+          <TitleBlockLabel>OEM Documents</TitleBlockLabel>
+          <TitleBlockValue>
+            <span className="font-mono text-xs">{asset.oemFileNames.join("  ·  ")}</span>
+          </TitleBlockValue>
+          {result.cmms_scope?.asset_node && (
+            <>
+              <TitleBlockLabel last>CMMS Node</TitleBlockLabel>
+              <TitleBlockValue last>
+                <span className="font-mono text-xs">{result.cmms_scope.asset_node}</span>
+              </TitleBlockValue>
+            </>
+          )}
         </div>
-        <button
-          onClick={() => { setAddDocsOpen((o) => !o); setError(null); setNewOemFiles([]); }}
-          disabled={analyzing}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white disabled:opacity-50"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Add Documents
-        </button>
       </div>
 
       {/* Inline add-documents panel */}
       {addDocsOpen && (
-        <div className="mb-6 bg-white rounded-2xl border border-sky-200 shadow-sm overflow-hidden">
-          <div className="px-6 pt-5 pb-4 border-b border-slate-100">
+        <div className="mb-5 bg-white rounded-sm border border-sky-300 overflow-hidden">
+          <div className="px-6 pt-5 pb-4 border-b border-slate-200">
             <p className="text-sm font-semibold text-slate-700">Add OEM Documents</p>
             <p className="text-xs text-slate-400 mt-0.5">
               New documents will be analyzed against{" "}
@@ -217,12 +241,12 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
           </div>
 
           {error && (
-            <div className="mx-6 mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+            <div className="mx-6 mb-4 bg-red-50 border-l-4 border-red-400 rounded-sm px-4 py-3 text-sm text-red-700">
               <span className="font-semibold">Error: </span>{error}
             </div>
           )}
 
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
             <button
               onClick={() => { setAddDocsOpen(false); setNewOemFiles([]); setError(null); }}
               disabled={analyzing}
@@ -234,9 +258,9 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
               onClick={handleAddDocuments}
               disabled={!newOemFiles.length || analyzing}
               className={[
-                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
+                "inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-semibold transition-all duration-150",
                 newOemFiles.length && !analyzing
-                  ? "bg-sky-500 text-white hover:bg-sky-600 shadow-sm cursor-pointer"
+                  ? "bg-sky-500 text-white hover:bg-sky-600 cursor-pointer"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed",
               ].join(" ")}
             >
@@ -256,39 +280,47 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
         </div>
       )}
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 text-center">
-          <p className="text-xl font-bold text-emerald-600 leading-tight">{pct(summary.match_rate)}</p>
-          <p className="text-xs text-slate-500">matched</p>
-          <p className="text-xl font-bold text-red-600 leading-tight mt-2">{pct(1 - summary.match_rate)}</p>
-          <p className="text-xs text-slate-500">missing</p>
+      {/* CMMS scope — what the BOM already contains for this asset */}
+      {result.cmms_scope && (
+        <div className="bg-white border border-slate-300 border-l-4 border-l-slate-400 rounded-sm px-4 py-2.5 text-sm text-slate-600 mb-4">
+          Your CMMS already contains{" "}
+          <span className="font-semibold text-slate-800">{result.cmms_scope.asset_entry_count}</span> entries for
+          this asset. The coverage figures below measure how much of your OEM documents those entries cover — not
+          whether the BOM is empty.
         </div>
-        {[
-          { label: "Matched", value: summary.matched_count, color: "text-emerald-600" },
-          { label: "Missing", value: summary.missing_count, color: "text-red-600" },
-          { label: "Extra in CMMS", value: summary.extra_count, color: "text-amber-600" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-slate-200 px-5 py-4 text-center">
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{label}</p>
-          </div>
-        ))}
+      )}
+
+      {/* Summary stats */}
+      <div className={`grid grid-cols-2 ${result.cmms_scope ? "sm:grid-cols-5" : "sm:grid-cols-4"} gap-px bg-slate-300 border border-slate-300 rounded-sm overflow-hidden mb-4`}>
+        <StatCell value={pct(summary.match_rate)} label="Drawing coverage in CMMS" color="text-sky-600" />
+        {result.cmms_scope && (
+          <StatCell value={result.cmms_scope.asset_entry_count} label="In CMMS for this asset" color="text-slate-700" />
+        )}
+        <StatCell value={summary.matched_count} label="Matched" color="text-emerald-600" />
+        <StatCell value={summary.missing_count} label="Missing" color="text-red-600" />
+        <StatCell value={summary.needs_review_count ?? 0} label="Needs review" color="text-amber-600" />
       </div>
 
+      {result.coverage_note && (
+        <div className="bg-sky-50 border border-sky-200 border-l-4 border-l-sky-400 rounded-sm px-4 py-2.5 text-sm text-sky-900 mb-3">
+          <span className="font-semibold">Document coverage: </span>{result.coverage_note}
+        </div>
+      )}
+
       {summary.critical_missing_count > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700 font-medium mb-3">
+        <div className="bg-red-50 border border-red-200 border-l-4 border-l-red-500 rounded-sm px-4 py-2.5 text-sm text-red-700 font-medium mb-3">
           {summary.critical_missing_count} critical part{summary.critical_missing_count > 1 ? "s are" : " is"} missing from your CMMS — immediate attention recommended.
         </div>
       )}
       {(summary.visually_identified_count ?? 0) > 0 && (
-        <div className="bg-violet-50 border border-violet-200 rounded-xl px-5 py-3 text-sm text-violet-700 font-medium mb-6">
+        <div className="bg-violet-50 border border-violet-200 border-l-4 border-l-violet-400 rounded-sm px-4 py-2.5 text-sm text-violet-700 font-medium mb-6">
           {summary.visually_identified_count} part{summary.visually_identified_count === 1 ? "" : "s"} identified from visual inspection of drawings — not listed in any parts table.
         </div>
       )}
 
       <div className="flex flex-col gap-8">
         <MissingSection items={result.missing_from_cmms} showSource={multiDoc} />
+        <NeedsReviewSection items={result.needs_review ?? []} showSource={multiDoc} />
         <MatchedSection items={result.matched} showSource={multiDoc} />
         <ExtraSection items={result.extra_in_cmms} />
       </div>
@@ -296,12 +328,37 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
   );
 }
 
+function TitleBlockLabel({ children, last }: { children: React.ReactNode; last?: boolean }) {
+  return (
+    <div className={`px-3 py-2 bg-slate-100 border-r border-slate-300 ${last ? "" : "border-b"} text-[10px] uppercase tracking-[0.12em] text-slate-500 font-semibold flex items-center`}>
+      {children}
+    </div>
+  );
+}
+
+function TitleBlockValue({ children, last }: { children: React.ReactNode; last?: boolean }) {
+  return (
+    <div className={`px-3 py-2 ${last ? "" : "border-b"} border-slate-200 text-sm text-slate-700 min-w-0`}>
+      {children}
+    </div>
+  );
+}
+
+function StatCell({ value, label, color }: { value: string | number; label: string; color: string }) {
+  return (
+    <div className="bg-white px-4 py-3">
+      <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
+      <p className="text-[10px] uppercase tracking-[0.08em] text-slate-500 mt-0.5">{label}</p>
+    </div>
+  );
+}
+
 function SectionHeader({ color, label, count }: { color: string; label: string; count: number }) {
   return (
-    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-      <span className={`w-2 h-2 rounded-full ${color} inline-block`} />
+    <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 mb-2 flex items-center gap-2">
+      <span className={`w-2 h-2 ${color} inline-block`} />
       {label}
-      <span className="ml-1 text-xs font-normal text-slate-400">({count})</span>
+      <span className="ml-1 font-normal normal-case tracking-normal text-slate-400">({count})</span>
     </h3>
   );
 }
@@ -309,49 +366,133 @@ function SectionHeader({ color, label, count }: { color: string; label: string; 
 function SourceBadge({ doc }: { doc?: string }) {
   if (!doc) return null;
   return (
-    <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-mono truncate max-w-[160px]" title={doc}>
+    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-sm font-mono truncate max-w-[160px] inline-block align-middle" title={doc}>
       {doc}
     </span>
   );
 }
+
+const TH = "px-3 py-2 text-left text-[10px] uppercase tracking-[0.1em] text-slate-500 font-semibold whitespace-nowrap";
+const TD = "px-3 py-2.5 align-top";
 
 function MissingSection({ items, showSource }: { items: Asset["result"]["missing_from_cmms"]; showSource: boolean }) {
   if (items.length === 0) return null;
   const order = { CRITICAL: 0, IMPORTANT: 1, ROUTINE: 2 };
   const sorted = [...items].sort((a, b) => order[a.criticality] - order[b.criticality]);
 
+  const hasSourcing = sorted.some((i) => i.sourcing_category || i.lead_time_estimate);
+
   return (
     <section>
       <SectionHeader color="bg-red-500" label="Missing from CMMS" count={items.length} />
+      {hasSourcing && (
+        <p className="text-xs text-slate-400 mb-2">
+          Lead times are planning estimates based on sourcing category — not supplier quotes.
+        </p>
+      )}
+      <div className="bg-white border border-slate-300 rounded-sm overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b-2 border-slate-300 bg-slate-50">
+              <th className={TH}>Part Number</th>
+              <th className={`${TH} w-full`}>Description / Action</th>
+              <th className={TH}>Criticality</th>
+              {hasSourcing && <th className={TH}>Sourcing</th>}
+              {hasSourcing && <th className={TH}>Typical Lead Time</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((item, i) => (
+              <tr key={i} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/60">
+                <td className={`${TD} whitespace-nowrap`}>
+                  {item.oem_part_number ? (
+                    <span className="font-mono text-xs text-slate-700">{item.oem_part_number}</span>
+                  ) : (
+                    <span className="text-xs text-slate-300">—</span>
+                  )}
+                  {item.source === "visual_inspection" && (
+                    <span className="block mt-1 w-fit text-[10px] font-medium text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-sm">
+                      VISUAL
+                    </span>
+                  )}
+                </td>
+                <td className={TD}>
+                  <p className="font-medium text-slate-800">{item.oem_description}</p>
+                  <p className="text-xs text-slate-500 mt-1">{item.reason}</p>
+                  {item.visual_note && <p className="text-xs text-violet-600 mt-0.5 italic">{item.visual_note}</p>}
+                  <p className="text-xs text-sky-700 mt-0.5">{item.recommendation}</p>
+                  {item.sourcing_note && <p className="text-xs text-slate-400 mt-0.5 italic">{item.sourcing_note}</p>}
+                  {showSource && <span className="block mt-1"><SourceBadge doc={item.source_doc} /></span>}
+                </td>
+                <td className={`${TD} whitespace-nowrap`}>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm border ${CRITICALITY_STYLES[item.criticality]}`}>
+                    {item.criticality}
+                  </span>
+                </td>
+                {hasSourcing && (
+                  <td className={`${TD} whitespace-nowrap text-xs text-slate-600`}>
+                    {item.sourcing_category ? SOURCING_LABELS[item.sourcing_category] ?? item.sourcing_category : "—"}
+                  </td>
+                )}
+                {hasSourcing && (
+                  <td className={`${TD} whitespace-nowrap text-xs text-slate-600 tabular-nums`}>
+                    {item.lead_time_estimate ?? "—"}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function NeedsReviewSection({
+  items,
+  showSource,
+}: {
+  items: NonNullable<Asset["result"]["needs_review"]>;
+  showSource: boolean;
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <section>
+      <SectionHeader color="bg-amber-400" label="Needs Review — possible data entry errors" count={items.length} />
+      <p className="text-xs text-slate-400 mb-2">
+        The drawing and your CMMS disagree on these — verify which model is physically installed.
+      </p>
       <div className="flex flex-col gap-2">
-        {sorted.map((item, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 px-5 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+        {items.map((item, i) => (
+          <div key={i} className="bg-white rounded-sm border border-slate-300 border-l-4 border-l-amber-400 px-4 py-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.1em] text-slate-400">OEM document says</p>
+                <p className="text-sm text-slate-800 mt-0.5">
                   {item.oem_part_number && (
-                    <span className="font-mono text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    <span className="font-mono text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-sm mr-1.5">
                       {item.oem_part_number}
                     </span>
                   )}
-                  <span className="text-sm font-medium text-slate-800">{item.oem_description}</span>
-                  {item.source === "visual_inspection" && (
-                    <span className="text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">
-                      Visual
+                  {item.oem_description}
+                </p>
+                {showSource && <SourceBadge doc={item.source_doc} />}
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.1em] text-slate-400">Your CMMS has</p>
+                <p className="text-sm text-slate-800 mt-0.5">
+                  {item.cmms_part_number && (
+                    <span className="font-mono text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-sm mr-1.5">
+                      {item.cmms_part_number}
                     </span>
                   )}
-                  {showSource && <SourceBadge doc={item.source_doc} />}
-                </div>
-                <p className="text-xs text-slate-500 mt-1.5">{item.reason}</p>
-                {item.visual_note && (
-                  <p className="text-xs text-violet-600 mt-1 italic">{item.visual_note}</p>
-                )}
-                <p className="text-xs text-sky-600 mt-1">{item.recommendation}</p>
+                  {item.cmms_description}
+                </p>
               </div>
-              <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded border ${CRITICALITY_STYLES[item.criticality]}`}>
-                {item.criticality}
-              </span>
             </div>
+            <p className="text-xs text-amber-700 mt-2">{item.issue}</p>
+            <p className="text-xs text-sky-700 mt-1">{item.recommendation}</p>
           </div>
         ))}
       </div>
@@ -362,44 +503,48 @@ function MissingSection({ items, showSource }: { items: Asset["result"]["missing
 function MatchedSection({ items, showSource }: { items: Asset["result"]["matched"]; showSource: boolean }) {
   const [open, setOpen] = useState(false);
   if (items.length === 0) return null;
-  const visible = open ? items : items.slice(0, 4);
+  const visible = open ? items : items.slice(0, 6);
 
   return (
     <section>
       <SectionHeader color="bg-emerald-500" label="Matched Parts" count={items.length} />
-      <div className="flex flex-col gap-2">
-        {visible.map((item, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 px-5 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 flex-1 min-w-0">
-                <div>
-                  <p className="text-xs text-slate-400">OEM</p>
-                  <p className="text-sm text-slate-700">
-                    {item.oem_part_number && <span className="font-mono text-xs text-slate-500 mr-1">{item.oem_part_number}</span>}
-                    {item.oem_description}
-                  </p>
-                  {showSource && <SourceBadge doc={item.source_doc} />}
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400">CMMS</p>
-                  <p className="text-sm text-slate-700">
-                    {item.cmms_part_number && <span className="font-mono text-xs text-slate-500 mr-1">{item.cmms_part_number}</span>}
-                    {item.cmms_description}
-                  </p>
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <span className="text-xs font-semibold text-emerald-600">{pct(item.confidence)}</span>
-                <p className="text-xs text-slate-400">confidence</p>
-              </div>
-            </div>
-            {item.match_rationale && (
-              <p className="text-xs text-slate-400 mt-1.5 italic">{item.match_rationale}</p>
-            )}
-          </div>
-        ))}
+      <div className="bg-white border border-slate-300 rounded-sm overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b-2 border-slate-300 bg-slate-50">
+              <th className={`${TH} w-1/2`}>OEM Document</th>
+              <th className={`${TH} w-1/2`}>CMMS Entry</th>
+              <th className={TH}>Confidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((item, i) => (
+              <tr key={i} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/60">
+                <td className={TD}>
+                  {item.oem_part_number && (
+                    <span className="font-mono text-xs text-slate-700 block">{item.oem_part_number}</span>
+                  )}
+                  <span className="text-slate-700 text-xs">{item.oem_description}</span>
+                  {showSource && <span className="block mt-0.5"><SourceBadge doc={item.source_doc} /></span>}
+                </td>
+                <td className={TD}>
+                  {item.cmms_part_number && (
+                    <span className="font-mono text-xs text-slate-700 block">{item.cmms_part_number}</span>
+                  )}
+                  <span className="text-slate-700 text-xs">{item.cmms_description}</span>
+                  {item.match_rationale && (
+                    <span className="block text-xs text-slate-400 italic mt-0.5">{item.match_rationale}</span>
+                  )}
+                </td>
+                <td className={`${TD} whitespace-nowrap`}>
+                  <span className="text-xs font-semibold text-emerald-600 tabular-nums">{pct(item.confidence)}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      {items.length > 4 && (
+      {items.length > 6 && (
         <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-sky-600 hover:underline cursor-pointer">
           {open ? "Show less" : `Show all ${items.length} matched parts`}
         </button>
@@ -411,27 +556,39 @@ function MatchedSection({ items, showSource }: { items: Asset["result"]["matched
 function ExtraSection({ items }: { items: Asset["result"]["extra_in_cmms"] }) {
   const [open, setOpen] = useState(false);
   if (items.length === 0) return null;
-  const visible = open ? items : items.slice(0, 4);
+  const visible = open ? items : items.slice(0, 6);
 
   return (
     <section>
-      <SectionHeader color="bg-amber-400" label="Extra in CMMS" count={items.length} />
-      <div className="flex flex-col gap-2">
-        {visible.map((item, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 px-5 py-3">
-            <div className="flex items-start gap-2 flex-wrap">
-              {item.cmms_part_number && (
-                <span className="font-mono text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                  {item.cmms_part_number}
-                </span>
-              )}
-              <span className="text-sm text-slate-700">{item.cmms_description}</span>
-            </div>
-            {item.note && <p className="text-xs text-slate-400 mt-1.5">{item.note}</p>}
-          </div>
-        ))}
+      <SectionHeader color="bg-amber-400" label="In CMMS, not in these documents" count={items.length} />
+      <div className="bg-white border border-slate-300 rounded-sm overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b-2 border-slate-300 bg-slate-50">
+              <th className={TH}>CMMS Number</th>
+              <th className={`${TH} w-full`}>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((item, i) => (
+              <tr key={i} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/60">
+                <td className={`${TD} whitespace-nowrap`}>
+                  {item.cmms_part_number ? (
+                    <span className="font-mono text-xs text-slate-700">{item.cmms_part_number}</span>
+                  ) : (
+                    <span className="text-xs text-slate-300">—</span>
+                  )}
+                </td>
+                <td className={TD}>
+                  <span className="text-slate-700 text-xs">{item.cmms_description}</span>
+                  {item.note && <span className="block text-xs text-slate-400 mt-0.5">{item.note}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      {items.length > 4 && (
+      {items.length > 6 && (
         <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-sky-600 hover:underline cursor-pointer">
           {open ? "Show less" : `Show all ${items.length} extra entries`}
         </button>

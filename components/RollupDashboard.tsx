@@ -71,7 +71,7 @@ export default function RollupDashboard({ session, assets, onBack, onSelectAsset
       {/* Aggregate stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
         {[
-          { label: "Overall Match Rate", value: pct(overallMatchRate), color: "text-sky-600" },
+          { label: "Overall Drawing Coverage", value: pct(overallMatchRate), color: "text-sky-600" },
           { label: "Total Matched", value: totalMatched, color: "text-emerald-600" },
           { label: "Total Missing", value: totalMissing, color: "text-red-600" },
           { label: "Critical Missing", value: totalCritical, color: "text-red-700" },
@@ -91,7 +91,7 @@ export default function RollupDashboard({ session, assets, onBack, onSelectAsset
             <thead>
               <tr className="border-b border-slate-100 text-xs text-slate-400 font-medium">
                 <th className="text-left px-5 py-3">Asset</th>
-                <th className="text-left px-5 py-3 hidden sm:table-cell">Match Rate</th>
+                <th className="text-left px-5 py-3 hidden sm:table-cell">Coverage</th>
                 <th className="text-right px-5 py-3">Matched</th>
                 <th className="text-right px-5 py-3">Missing</th>
                 <th className="text-right px-5 py-3">Critical</th>

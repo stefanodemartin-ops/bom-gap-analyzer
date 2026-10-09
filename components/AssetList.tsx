@@ -143,8 +143,8 @@ export default function AssetList({ session, assets, onAddAsset, onSelectAsset, 
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-base font-bold text-emerald-600 leading-tight">{pct(summary.match_rate)} matched</p>
-                    <p className="text-base font-bold text-red-500 leading-tight">{pct(1 - summary.match_rate)} missing</p>
+                    <p className="text-base font-bold text-sky-600 leading-tight">{pct(summary.match_rate)} covered</p>
+                    <p className="text-xs text-slate-400 leading-tight">of documented parts in CMMS</p>
                   </div>
                 </div>
 

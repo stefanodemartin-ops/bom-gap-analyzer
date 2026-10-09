@@ -17,17 +17,24 @@ export const SAMPLE_ASSETS: Asset[] = [
     oemFileNames: ["1854 Calciner Drawings.pdf","B-508898-1 CA.pdf","B-508898-1 REV. B_CA.pdf","L-8543-1272 Shell GA drawing.pdf"],
     result: {
       "equipment_identified": "1854 Calciner, 24\" OD x 31'-0\" Long, ABB Raymond / Combustion Engineering / FLSmidth",
+      "cmms_scope": {
+        "asset_entry_count": 47,
+        "asset_node": "BK-1854 CALCINER",
+        "note": "The CMMS export contains 47 component entries for this calciner, covering the drive train, seals, lubrication, and furnace electrical systems."
+      },
+      "coverage_note": "The drawings cover the mechanical calciner assembly (shell, drive, trunnions, seals); the furnace heater and control electronics in the CMMS are documented separately.",
       "oem_parts_count": 72,
       "cmms_parts_count": 50,
       "summary": {
-        "matched_count": 23,
+        "matched_count": 22,
         "missing_count": 47,
         "extra_count": 7,
-        "match_rate": 0.33,
+        "match_rate": 0.32,
         "critical_missing_count": 12,
         "important_missing_count": 18,
         "routine_missing_count": 17,
-        "visually_identified_count": 7
+        "visually_identified_count": 7,
+        "needs_review_count": 1
       },
       "matched": [
         {
@@ -127,15 +134,6 @@ export const SAMPLE_ASSETS: Asset[] = [
           "cmms_description": "SEAL,GRAPHITE,35\"OD,28\"ID,1-5/8\"THK",
           "confidence": 0.85,
           "match_rationale": "CMMS graphite seal ring dimensions (35\"OD x 28\"ID) are consistent with the graphite seal ring in the OEM fixed seal assembly drawing L-110-22-996.",
-          "source_doc": "1854 Calciner Drawings.pdf, B-508898-1 CA.pdf, B-508898-1 REV. B_CA.pdf, L-8543-1272 Shell GA drawing.pdf"
-        },
-        {
-          "oem_part_number": "K1854-01",
-          "oem_description": "Brass Seal Ring, 35\"OD x 28\"ID, 1\" thick, for K1854 calciner",
-          "cmms_part_number": "9174292",
-          "cmms_description": "DNR-SEAL,RING,1854,36\"OD,27.5\"ID,1\"THK",
-          "confidence": 0.8,
-          "match_rationale": "CMMS seal ring is explicitly for the 1854 calciner with matching 1\" thickness and near-identical OD/ID dimensions.",
           "source_doc": "1854 Calciner Drawings.pdf, B-508898-1 CA.pdf, B-508898-1 REV. B_CA.pdf, L-8543-1272 Shell GA drawing.pdf"
         },
         {
@@ -247,6 +245,9 @@ export const SAMPLE_ASSETS: Asset[] = [
           "recommendation": "Add FA-110-22-997 to CMMS with qty 1 minimum stock and link to the fixed seal assembly BOM.",
           "source": "parts_table",
           "visual_note": null,
+          "sourcing_category": "oem_proprietary",
+          "lead_time_estimate": "12-26 weeks",
+          "sourcing_note": "OEM-engineered seal component; ABB Raymond calciner parts now route through FLSmidth — verify the part number is still active before an outage forces the issue.",
           "source_doc": "1854 Calciner Drawings.pdf, B-508898-1 CA.pdf, B-508898-1 REV. B_CA.pdf, L-8543-1272 Shell GA drawing.pdf"
         },
         {
@@ -257,6 +258,9 @@ export const SAMPLE_ASSETS: Asset[] = [
           "recommendation": "Add FA-110-22-998 to CMMS with qty 2 minimum stock (one per seal end) and assign to seal assembly PM task.",
           "source": "parts_table",
           "visual_note": null,
+          "sourcing_category": "fabricate",
+          "lead_time_estimate": "3-6 weeks",
+          "sourcing_note": "Flat wear plate a machine shop can produce from the seal assembly drawing if OEM supply is slow or obsolete.",
           "source_doc": "1854 Calciner Drawings.pdf, B-508898-1 CA.pdf, B-508898-1 REV. B_CA.pdf, L-8543-1272 Shell GA drawing.pdf"
         },
         {
@@ -267,6 +271,9 @@ export const SAMPLE_ASSETS: Asset[] = [
           "recommendation": "Add HA-110-22-299 to CMMS with qty 2 minimum stock.",
           "source": "parts_table",
           "visual_note": null,
+          "sourcing_category": "fabricate",
+          "lead_time_estimate": "2-4 weeks",
+          "sourcing_note": "Simple machined ring; fabricable from the drawing by a local machine shop.",
           "source_doc": "1854 Calciner Drawings.pdf, B-508898-1 CA.pdf, B-508898-1 REV. B_CA.pdf, L-8543-1272 Shell GA drawing.pdf"
         },
         {
@@ -707,6 +714,17 @@ export const SAMPLE_ASSETS: Asset[] = [
           "recommendation": "Add adjusting screws to CMMS with qty 4 minimum stock and include in trunnion alignment PM procedure.",
           "source": "visual_inspection",
           "visual_note": "Labeled 'ADJUSTING SCREWS' in the plan view near the discharge end trunnion base on drawing L-8543-1272; visible as threaded adjustment mechanisms on the trunnion support frame.",
+          "source_doc": "1854 Calciner Drawings.pdf, B-508898-1 CA.pdf, B-508898-1 REV. B_CA.pdf, L-8543-1272 Shell GA drawing.pdf"
+        }
+      ],
+      "needs_review": [
+        {
+          "oem_part_number": "K1854-01",
+          "oem_description": "Brass Seal Ring, 35\"OD x 28\"ID, 1\" thick, for K1854 calciner",
+          "cmms_part_number": "9174292",
+          "cmms_description": "DNR-SEAL,RING,1854,36\"OD,27.5\"ID,1\"THK",
+          "issue": "Both are 1854 calciner seal rings, but the OEM drawing says 35\"OD x 28\"ID while the CMMS entry says 36\"OD x 27.5\"ID — a wrong-size ring ordered during a seal outage will not fit.",
+          "recommendation": "Measure the installed ring or check the drawing revision, then correct either the CMMS dimensions or stock the drawing's size.",
           "source_doc": "1854 Calciner Drawings.pdf, B-508898-1 CA.pdf, B-508898-1 REV. B_CA.pdf, L-8543-1272 Shell GA drawing.pdf"
         }
       ],

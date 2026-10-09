@@ -1,4 +1,4 @@
-import { AnalysisResult, MatchedPart, MissingPart, ExtraPart } from "./types";
+import { AnalysisResult, MatchedPart, MissingPart, ExtraPart, ReviewPart } from "./types";
 
 /** Normalise a part number for deduplication keying. */
 function normKey(s: string) {
@@ -11,6 +11,7 @@ export function tagResult(result: AnalysisResult, sourceDoc: string): AnalysisRe
     ...result,
     matched: result.matched.map((p) => ({ ...p, source_doc: sourceDoc })),
     missing_from_cmms: result.missing_from_cmms.map((p) => ({ ...p, source_doc: sourceDoc })),
+    needs_review: (result.needs_review ?? []).map((p) => ({ ...p, source_doc: sourceDoc })),
     extra_in_cmms: result.extra_in_cmms.map((p) => ({ ...p, source_doc: sourceDoc })),
   };
 }
@@ -52,6 +53,18 @@ export function mergeResults(existing: AnalysisResult, incoming: AnalysisResult)
   }
   const merged_missing = [...missingByKey.values()];
 
+  // ── needs_review ──────────────────────────────────────────────────────────
+  const reviewByKey = new Map<string, ReviewPart>();
+  for (const item of [...(existing.needs_review ?? []), ...(incoming.needs_review ?? [])]) {
+    const key = item.oem_part_number
+      ? normKey(item.oem_part_number)
+      : `desc:${item.oem_description.toLowerCase().trim().slice(0, 60)}`;
+    if (!reviewByKey.has(key)) {
+      reviewByKey.set(key, item);
+    }
+  }
+  const merged_review = [...reviewByKey.values()];
+
   // ── extra_in_cmms ─────────────────────────────────────────────────────────
   const extraByKey = new Map<string, ExtraPart>();
   for (const item of [...existing.extra_in_cmms, ...incoming.extra_in_cmms]) {
@@ -70,10 +83,18 @@ export function mergeResults(existing: AnalysisResult, incoming: AnalysisResult)
   const extra_count = merged_extra.length;
   const total = matched_count + missing_count;
 
+  // Coverage notes differ per document — keep both when they do.
+  const coverage_note =
+    existing.coverage_note && incoming.coverage_note && existing.coverage_note !== incoming.coverage_note
+      ? `${existing.coverage_note} ${incoming.coverage_note}`
+      : existing.coverage_note ?? incoming.coverage_note;
+
   return {
     equipment_identified: existing.equipment_identified,
     oem_parts_count: existing.oem_parts_count + incoming.oem_parts_count,
     cmms_parts_count: existing.cmms_parts_count, // same CMMS file throughout
+    cmms_scope: existing.cmms_scope ?? incoming.cmms_scope, // same CMMS file, first analysis wins
+    coverage_note,
     summary: {
       matched_count,
       missing_count,
@@ -83,9 +104,11 @@ export function mergeResults(existing: AnalysisResult, incoming: AnalysisResult)
       important_missing_count: merged_missing.filter((p) => p.criticality === "IMPORTANT").length,
       routine_missing_count: merged_missing.filter((p) => p.criticality === "ROUTINE").length,
       visually_identified_count: merged_missing.filter((p) => p.source === "visual_inspection").length,
+      needs_review_count: merged_review.length,
     },
     matched: merged_matched,
     missing_from_cmms: merged_missing,
+    needs_review: merged_review,
     extra_in_cmms: merged_extra,
   };
 }

@@ -10,6 +10,14 @@ import {
 } from "@react-pdf/renderer";
 import { Asset, MissingPart, Session } from "./types";
 
+const SOURCING_LABELS: Record<string, string> = {
+  distributor_stock: "Distributor stock",
+  oem_configured: "OEM configured",
+  oem_proprietary: "OEM proprietary",
+  fabricate: "Fabricate from drawing",
+  unknown: "Sourcing unknown",
+};
+
 // Brand palette (matches the app)
 const NAVY = "#1B2A4A";
 const SKY = "#0EA5E9";
@@ -224,13 +232,27 @@ export function ReportDocument({ session, asset }: { session: Session; asset: As
             <Text style={styles.metaLabel}>CMMS export: </Text>
             {session.cmmsFileName} ({session.cmmsRowCount.toLocaleString()} rows)
           </Text>
+          {result.cmms_scope && (
+            <Text style={styles.meta}>
+              <Text style={styles.metaLabel}>In CMMS for this asset: </Text>
+              {result.cmms_scope.asset_entry_count} entries
+              {result.cmms_scope.asset_node ? ` under "${result.cmms_scope.asset_node}"` : ""} — coverage figures
+              below measure how much of the OEM documents these entries cover, not whether the BOM is empty.
+            </Text>
+          )}
 
           {/* Executive summary */}
           <View style={styles.statRow}>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: SKY }]}>{Math.round(s.match_rate * 100)}%</Text>
-              <Text style={styles.statLabel}>MATCH RATE</Text>
+              <Text style={styles.statLabel}>DRAWING COVERAGE</Text>
             </View>
+            {result.cmms_scope && (
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: SLATE }]}>{result.cmms_scope.asset_entry_count}</Text>
+                <Text style={styles.statLabel}>IN CMMS FOR ASSET</Text>
+              </View>
+            )}
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: GREEN }]}>{s.matched_count}</Text>
               <Text style={styles.statLabel}>MATCHED</Text>
@@ -243,11 +265,19 @@ export function ReportDocument({ session, asset }: { session: Session; asset: As
               <Text style={[styles.statValue, { color: RED }]}>{s.critical_missing_count}</Text>
               <Text style={styles.statLabel}>CRITICAL MISSING</Text>
             </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: AMBER }]}>{s.extra_count}</Text>
-              <Text style={styles.statLabel}>EXTRA IN CMMS</Text>
-            </View>
+            {(s.needs_review_count ?? 0) > 0 && (
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: AMBER }]}>{s.needs_review_count}</Text>
+                <Text style={styles.statLabel}>NEEDS REVIEW</Text>
+              </View>
+            )}
           </View>
+
+          {result.coverage_note && (
+            <View style={styles.visualBand}>
+              <Text style={styles.visualBandText}>Document coverage: {result.coverage_note}</Text>
+            </View>
+          )}
 
           {s.critical_missing_count > 0 && (
             <View style={styles.alertBand}>
@@ -291,6 +321,14 @@ export function ReportDocument({ session, asset }: { session: Session; asset: As
                     <Text style={styles.cardLine}>
                       <Text style={styles.cardLineLabel}>Recommendation: </Text>{p.recommendation}
                     </Text>
+                    {(p.sourcing_category || p.lead_time_estimate) && (
+                      <Text style={styles.cardLine}>
+                        <Text style={styles.cardLineLabel}>Sourcing: </Text>
+                        {p.sourcing_category ? SOURCING_LABELS[p.sourcing_category] ?? p.sourcing_category : "—"}
+                        {p.lead_time_estimate ? ` · typical lead time ${p.lead_time_estimate}` : ""}
+                        {p.sourcing_note ? ` — ${p.sourcing_note}` : ""}
+                      </Text>
+                    )}
                     {p.source === "visual_inspection" && p.visual_note ? (
                       <Text style={styles.visualNote}>
                         Found by drawing inspection: {p.visual_note}
@@ -300,6 +338,41 @@ export function ReportDocument({ session, asset }: { session: Session; asset: As
                 ))}
               </View>
             )
+          )}
+
+          {result.missing_from_cmms.some((p) => p.lead_time_estimate) && (
+            <Text style={{ fontSize: 7.5, color: SLATE_LIGHT, marginTop: 2 }}>
+              Lead times are planning estimates based on sourcing category — not supplier quotes.
+            </Text>
+          )}
+
+          {/* Needs review — near-matches / possible data entry errors */}
+          {(result.needs_review ?? []).length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>
+                Needs Review — drawing and CMMS disagree ({(result.needs_review ?? []).length})
+              </Text>
+              {(result.needs_review ?? []).map((p, i) => (
+                <View key={i} style={[styles.card, { borderColor: "#FDE68A" }]} wrap={false}>
+                  <View style={styles.cardHeaderRow}>
+                    <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                      {p.oem_part_number ? <Text style={styles.partNumber}>{p.oem_part_number}</Text> : null}
+                      <Text style={styles.partDesc}>{p.oem_description}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.cardLine}>
+                    <Text style={styles.cardLineLabel}>CMMS has: </Text>
+                    {p.cmms_part_number ? `${p.cmms_part_number} — ` : ""}{p.cmms_description}
+                  </Text>
+                  <Text style={styles.cardLine}>
+                    <Text style={styles.cardLineLabel}>Issue: </Text>{p.issue}
+                  </Text>
+                  <Text style={styles.cardLine}>
+                    <Text style={styles.cardLineLabel}>Recommendation: </Text>{p.recommendation}
+                  </Text>
+                </View>
+              ))}
+            </View>
           )}
 
           {/* Matched parts */}
