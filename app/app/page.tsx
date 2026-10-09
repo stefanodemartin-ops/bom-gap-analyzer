@@ -53,10 +53,16 @@ export default function Home() {
     }
   };
 
-  // Restore a saved session if the URL carries ?s=<id>
+  // Restore a saved session if the URL carries ?s=<id>, or open the sample
+  // analysis directly when linked from the landing page with ?sample=1
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("s");
-    if (id) loadSessionById(id);
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("s");
+    if (id) {
+      loadSessionById(id);
+    } else if (params.get("sample") === "1") {
+      handleLoadSample();
+    }
   }, []);
 
   const handleSessionStart = async (s: Session) => {
