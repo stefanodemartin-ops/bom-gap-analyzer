@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { BOOKING_URL } from "@/lib/siteConfig";
 
-const FIELD =
-  "w-full rounded-sm border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500";
-const LABEL = "block text-[11px] uppercase tracking-[0.08em] font-semibold text-slate-500 mb-1";
+// Free-analysis request form. Posts to /api/leads (same Neon `leads` table as before);
+// "Company or plant" is stored in the `company` column.
+
+const INPUT =
+  "h-[46px] w-full box-border rounded-lg border border-[#D4D4D8] bg-white px-3.5 text-[15px] text-[#0A0A0A] focus:outline-2 focus:outline-offset-1 focus:outline-[#0A0A0A] focus:border-[#0A0A0A]";
+const LABEL = "text-[13.5px] font-medium";
 
 export default function DemoForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -12,8 +16,7 @@ export default function DemoForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
+    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
 
     // Honeypot — real users never fill this hidden field
     if (data.website) return;
@@ -24,7 +27,7 @@ export default function DemoForm() {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, message: "Free asset analysis request" }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -39,83 +42,56 @@ export default function DemoForm() {
     }
   };
 
+  const card =
+    "rounded-xl border border-[#E4E4E7] bg-white p-8 flex flex-col gap-4 shadow-[0_24px_60px_-28px_rgba(10,10,10,0.18)]";
+
   if (status === "sent") {
     return (
-      <div className="bg-emerald-50 border border-emerald-200 border-l-4 border-l-emerald-500 rounded-sm px-5 py-6 text-center">
-        <p className="text-base font-semibold text-emerald-800">Thank you — we got your request.</p>
-        <p className="text-sm text-emerald-700 mt-1">
-          Stefano will get back to you within one business day to schedule your demo.
+      <div className={card} role="status">
+        <p className="m-0 text-[20px] font-semibold tracking-[-0.02em]">Thanks — we got your request.</p>
+        <p className="m-0 text-[15px] leading-[1.6] text-[#52525B]">
+          Stefano will email you within one business day with what to upload for your free asset analysis.
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
-        <label htmlFor="lead-name" className={LABEL}>Name *</label>
-        <input id="lead-name" name="name" required className={FIELD} placeholder="Jane Smith" />
+    <form onSubmit={handleSubmit} className={card}>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="f-name" className={LABEL}>Name</label>
+        <input id="f-name" name="name" type="text" autoComplete="name" required className={INPUT} />
       </div>
-      <div>
-        <label htmlFor="lead-email" className={LABEL}>Work email *</label>
-        <input id="lead-email" name="email" type="email" required className={FIELD} placeholder="jane.smith@company.com" />
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="f-email" className={LABEL}>Work email</label>
+        <input id="f-email" name="email" type="email" autoComplete="email" required className={INPUT} />
       </div>
-      <div>
-        <label htmlFor="lead-company" className={LABEL}>Company</label>
-        <input id="lead-company" name="company" className={FIELD} placeholder="Acme Chemicals" />
-      </div>
-      <div>
-        <label htmlFor="lead-plant" className={LABEL}>Plant / site</label>
-        <input id="lead-plant" name="plant" className={FIELD} placeholder="Houston Plant 2" />
-      </div>
-      <div>
-        <label htmlFor="lead-role" className={LABEL}>Role</label>
-        <input id="lead-role" name="role" className={FIELD} placeholder="Maintenance Manager" />
-      </div>
-      <div>
-        <label htmlFor="lead-plants" className={LABEL}>Number of plants</label>
-        <input id="lead-plants" name="numPlants" className={FIELD} placeholder="1" />
-      </div>
-      <div className="sm:col-span-2">
-        <label htmlFor="lead-message" className={LABEL}>Message</label>
-        <textarea
-          id="lead-message"
-          name="message"
-          rows={4}
-          className={FIELD}
-          placeholder="Tell us about the asset or plant you'd like to start with."
-        />
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="f-company" className={LABEL}>Company or plant</label>
+        <input id="f-company" name="company" type="text" autoComplete="organization" className={INPUT} />
       </div>
 
       {/* Honeypot field — hidden from real users */}
-      <input
-        type="text"
-        name="website"
-        tabIndex={-1}
-        autoComplete="off"
-        className="hidden"
-        aria-hidden="true"
-      />
+      <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
       {errorMsg && (
-        <div className="sm:col-span-2 bg-red-50 border border-red-200 border-l-4 border-l-red-500 rounded-sm px-4 py-2.5 text-sm text-red-700">
+        <p className="m-0 rounded-lg bg-[#FEF2F2] px-3.5 py-2.5 text-[14px] text-[#B42318]" role="alert">
           {errorMsg}
-        </div>
+        </p>
       )}
 
-      <div className="sm:col-span-2">
-        <button
-          type="submit"
-          disabled={status === "sending"}
-          className={[
-            "w-full sm:w-auto px-6 py-2.5 rounded-sm text-sm font-semibold transition-colors",
-            status === "sending"
-              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-              : "bg-sky-500 text-white hover:bg-sky-600 cursor-pointer",
-          ].join(" ")}
-        >
-          {status === "sending" ? "Sending…" : "Request a demo"}
-        </button>
+      <button
+        type="submit"
+        disabled={status === "sending"}
+        className="mt-1 inline-flex h-12 w-full items-center justify-center whitespace-nowrap rounded-lg border-0 bg-[#0A0A0A] px-[22px] text-[15px] font-medium text-white hover:bg-[#27272A] cursor-pointer disabled:cursor-not-allowed disabled:bg-[#71717A]"
+      >
+        {status === "sending" ? "Sending…" : "Get your free asset analysis"}
+      </button>
+      <div className="text-center text-[12.5px] text-[#71717A]">
+        Prefer to talk first?{" "}
+        <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-[#52525B]">
+          Book a 15-minute demo
+        </a>
       </div>
     </form>
   );
