@@ -4,6 +4,7 @@ import { useState } from "react";
 import UploadZone from "./UploadZone";
 import { Asset, Session } from "@/lib/types";
 import { tagResult } from "@/lib/mergeResults";
+import { BACK_LINK, BTN, CARD, INPUT, LABEL, Spinner } from "./ui";
 
 type Props = {
   session: Session;
@@ -71,40 +72,37 @@ export default function AddAsset({ session, onBack, onComplete }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      <button
-        onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6 cursor-pointer transition-colors"
-      >
+      <button onClick={onBack} className={`${BACK_LINK} mb-6`}>
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
         </svg>
         Back to asset list
       </button>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-8 pt-8 pb-6 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-800">Add Asset</h2>
-          <p className="text-sm text-slate-500 mt-1">
+      <div className={`${CARD} overflow-hidden`}>
+        <div className="px-8 pt-8 pb-6 border-b border-[#F1F1F3]">
+          <h2 className="m-0 text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.01em]">Add Asset</h2>
+          <p className="text-[14px] text-[#71717A] mt-1">
             Upload the OEM document(s) for this asset. Analysis will run against{" "}
-            <span className="font-medium text-slate-600">{session.cmmsFileName}</span>.
+            <span className="font-medium text-[#3F3F46]">{session.cmmsFileName}</span>.
           </p>
         </div>
 
         <div className="px-8 py-8 flex flex-col gap-6">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Asset Name</label>
+            <label className={LABEL}>Asset name</label>
             <input
               type="text"
               value={assetName}
               onChange={(e) => setAssetName(e.target.value)}
               placeholder="e.g. Centrifugal Pump P-101"
               disabled={analyzing}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent disabled:opacity-50"
+              className={INPUT}
             />
           </div>
 
           <UploadZone
-            label="OEM Documents"
+            label="OEM documents"
             description="Parts list, BOM, or service manual — multiple files supported"
             accept=".pdf,application/pdf"
             acceptLabel="PDF"
@@ -122,70 +120,55 @@ export default function AddAsset({ session, onBack, onComplete }: Props) {
         </div>
 
         {analyzing && (
-          <div className="mx-8 mb-6 rounded-xl border border-sky-100 bg-sky-50/60 px-6 py-5">
+          <div className="mx-8 mb-6 rounded-xl border border-[#E4E4E7] bg-[#FAFAFA] px-6 py-5">
             <div className="flex items-center gap-3 mb-4">
-              <svg className="w-5 h-5 text-sky-600 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-              </svg>
-              <p className="text-sm font-semibold text-slate-700">
+              <Spinner className="w-5 h-5 text-[#0A0A0A] shrink-0" />
+              <p className="m-0 text-[14px] font-semibold text-[#0A0A0A]">
                 Analyzing {assetName.trim() || "asset"}…
               </p>
             </div>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2 m-0 p-0 list-none">
               {ANALYSIS_STEPS.map((step, i) => (
-                <li key={step} className="flex items-center gap-2.5 text-sm">
+                <li key={step} className="flex items-center gap-2.5 text-[14px]">
                   {i < analysisStep ? (
-                    <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="w-4 h-4 text-[#0F766E] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                   ) : i === analysisStep ? (
                     <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-[#0A0A0A] animate-pulse" />
                     </span>
                   ) : (
                     <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-slate-200" />
+                      <span className="w-2 h-2 rounded-full bg-[#D4D4D8]" />
                     </span>
                   )}
-                  <span className={i <= analysisStep ? "text-slate-700" : "text-slate-400"}>{step}</span>
+                  <span className={i <= analysisStep ? "text-[#0A0A0A]" : "text-[#A1A1AA]"}>{step}</span>
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-slate-400 mt-4">
+            <p className="m-0 text-[12px] text-[#71717A] mt-4">
               AI analysis typically takes 20–60 seconds depending on document size.
             </p>
           </div>
         )}
 
         {error && (
-          <div className="mx-8 mb-4 bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700">
+          <div className="mx-8 mb-4 bg-[#FEF2F2] rounded-lg px-5 py-3 text-[14px] text-[#B42318]" role="alert">
             <span className="font-semibold">Error: </span>{error}
           </div>
         )}
 
-        <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-4">
-          <p className="text-xs text-slate-400">
+        <div className="px-8 py-6 bg-[#FAFAFA] border-t border-[#F1F1F3] flex items-center justify-between gap-4">
+          <p className="m-0 text-[12.5px] text-[#71717A]">
             {oemFiles.length === 0
               ? "No OEM documents selected"
               : `${oemFiles.length} document${oemFiles.length > 1 ? "s" : ""} selected`}
           </p>
-          <button
-            onClick={handleAnalyze}
-            disabled={!canAnalyze || analyzing}
-            className={[
-              "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150",
-              canAnalyze && !analyzing
-                ? "bg-sky-500 text-white hover:bg-sky-600 shadow-sm cursor-pointer"
-                : "bg-slate-200 text-slate-400 cursor-not-allowed",
-            ].join(" ")}
-          >
+          <button onClick={handleAnalyze} disabled={!canAnalyze || analyzing} className={BTN}>
             {analyzing ? (
               <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-                </svg>
+                <Spinner />
                 Analyzing…
               </>
             ) : (

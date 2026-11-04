@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import { Asset, Session } from "@/lib/types";
 import { tagResult, mergeResults } from "@/lib/mergeResults";
 import UploadZone from "./UploadZone";
+import { BACK_LINK, BAD_TEXT, BTN, CARD, GHOST, GOOD_TEXT, PILL_CRITICAL, PILL_IMPORTANT, PILL_NEUTRAL, Spinner, WARN_TEXT } from "./ui";
 
 type Props = {
   asset: Asset;
@@ -17,10 +18,16 @@ function pct(n: number) {
   return `${Math.round(n * 100)}%`;
 }
 
-const CRITICALITY_STYLES = {
-  CRITICAL: "bg-red-100 text-red-700 border-red-200",
-  IMPORTANT: "bg-amber-100 text-amber-700 border-amber-200",
-  ROUTINE: "bg-slate-100 text-slate-600 border-slate-200",
+const CRITICALITY_PILLS = {
+  CRITICAL: PILL_CRITICAL,
+  IMPORTANT: PILL_IMPORTANT,
+  ROUTINE: PILL_NEUTRAL,
+};
+
+const CRITICALITY_LABELS = {
+  CRITICAL: "Critical",
+  IMPORTANT: "Important",
+  ROUTINE: "Routine",
 };
 
 const SOURCING_LABELS: Record<string, string> = {
@@ -134,21 +141,18 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Top bar */}
-      <div className="flex items-center justify-between mb-5">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 cursor-pointer transition-colors"
-        >
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <button onClick={onBack} className={BACK_LINK}>
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
           Back to asset list
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => { setAddDocsOpen((o) => !o); setError(null); setNewOemFiles([]); }}
             disabled={analyzing}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-sm border border-slate-300 text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white disabled:opacity-50"
+            className={GHOST}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -156,31 +160,16 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
             Add Documents
           </button>
           {result.missing_from_cmms.length > 0 && (
-            <button
-              onClick={() => exportMissingParts(asset)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-sm border border-slate-300 text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white"
-            >
+            <button onClick={() => exportMissingParts(asset)} className={GHOST}>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
               Export Missing Parts
             </button>
           )}
-          <button
-            onClick={handleDownloadReport}
-            disabled={generatingReport}
-            className={[
-              "inline-flex items-center gap-1.5 px-3 py-2 rounded-sm text-sm font-semibold transition-colors",
-              generatingReport
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                : "bg-sky-500 text-white hover:bg-sky-600 cursor-pointer",
-            ].join(" ")}
-          >
+          <button onClick={handleDownloadReport} disabled={generatingReport} className={BTN}>
             {generatingReport ? (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-              </svg>
+              <Spinner />
             ) : (
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -191,25 +180,25 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
         </div>
       </div>
 
-      {/* Title block — styled like the corner block of an engineering drawing */}
-      <div className="bg-white border border-slate-300 rounded-sm mb-5">
-        <div className="grid grid-cols-[110px_1fr] sm:grid-cols-[130px_1fr]">
-          <TitleBlockLabel>Asset</TitleBlockLabel>
-          <TitleBlockValue>
-            <span className="text-base font-bold text-slate-800">{asset.name}</span>
-          </TitleBlockValue>
-          <TitleBlockLabel>Equipment</TitleBlockLabel>
-          <TitleBlockValue>{result.equipment_identified}</TitleBlockValue>
-          <TitleBlockLabel>OEM Documents</TitleBlockLabel>
-          <TitleBlockValue>
-            <span className="font-mono text-xs">{asset.oemFileNames.join("  ·  ")}</span>
-          </TitleBlockValue>
+      {/* Asset header card */}
+      <div className={`${CARD} mb-5 overflow-hidden`}>
+        <div className="grid grid-cols-[110px_1fr] sm:grid-cols-[140px_1fr]">
+          <HeaderLabel>Asset</HeaderLabel>
+          <HeaderValue>
+            <span className="text-[16px] font-semibold text-[#0A0A0A]">{asset.name}</span>
+          </HeaderValue>
+          <HeaderLabel>Equipment</HeaderLabel>
+          <HeaderValue>{result.equipment_identified}</HeaderValue>
+          <HeaderLabel>OEM documents</HeaderLabel>
+          <HeaderValue>
+            <span className="font-mono text-[12px] text-[#3F3F46]">{asset.oemFileNames.join("  ·  ")}</span>
+          </HeaderValue>
           {result.cmms_scope?.asset_node && (
             <>
-              <TitleBlockLabel last>CMMS Node</TitleBlockLabel>
-              <TitleBlockValue last>
-                <span className="font-mono text-xs">{result.cmms_scope.asset_node}</span>
-              </TitleBlockValue>
+              <HeaderLabel last>CMMS node</HeaderLabel>
+              <HeaderValue last>
+                <span className="font-mono text-[12px] text-[#3F3F46]">{result.cmms_scope.asset_node}</span>
+              </HeaderValue>
             </>
           )}
         </div>
@@ -217,18 +206,18 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
 
       {/* Inline add-documents panel */}
       {addDocsOpen && (
-        <div className="mb-5 bg-white rounded-sm border border-sky-300 overflow-hidden">
-          <div className="px-6 pt-5 pb-4 border-b border-slate-200">
-            <p className="text-sm font-semibold text-slate-700">Add OEM Documents</p>
-            <p className="text-xs text-slate-400 mt-0.5">
+        <div className={`${CARD} mb-5 !border-[#0A0A0A] overflow-hidden`}>
+          <div className="px-6 pt-5 pb-4 border-b border-[#F1F1F3]">
+            <p className="m-0 text-[14px] font-semibold text-[#0A0A0A]">Add OEM Documents</p>
+            <p className="m-0 text-[12.5px] text-[#71717A] mt-0.5">
               New documents will be analyzed against{" "}
-              <span className="font-medium text-slate-600">{session.cmmsFileName}</span> and merged into existing results.
+              <span className="font-medium text-[#3F3F46]">{session.cmmsFileName}</span> and merged into existing results.
             </p>
           </div>
 
           <div className="px-6 py-5">
             <UploadZone
-              label="New OEM Documents"
+              label="New OEM documents"
               description="Parts list, BOM, or service manual"
               accept=".pdf,application/pdf"
               acceptLabel="PDF"
@@ -241,35 +230,23 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
           </div>
 
           {error && (
-            <div className="mx-6 mb-4 bg-red-50 border-l-4 border-red-400 rounded-sm px-4 py-3 text-sm text-red-700">
+            <div className="mx-6 mb-4 bg-[#FEF2F2] rounded-lg px-4 py-3 text-[14px] text-[#B42318]" role="alert">
               <span className="font-semibold">Error: </span>{error}
             </div>
           )}
 
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+          <div className="px-6 py-4 bg-[#FAFAFA] border-t border-[#F1F1F3] flex items-center justify-between gap-3">
             <button
               onClick={() => { setAddDocsOpen(false); setNewOemFiles([]); setError(null); }}
               disabled={analyzing}
-              className="text-sm text-slate-500 hover:text-slate-700 cursor-pointer transition-colors"
+              className="text-[14px] font-medium text-[#52525B] hover:text-[#0A0A0A] cursor-pointer transition-colors"
             >
               Cancel
             </button>
-            <button
-              onClick={handleAddDocuments}
-              disabled={!newOemFiles.length || analyzing}
-              className={[
-                "inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-semibold transition-all duration-150",
-                newOemFiles.length && !analyzing
-                  ? "bg-sky-500 text-white hover:bg-sky-600 cursor-pointer"
-                  : "bg-slate-200 text-slate-400 cursor-not-allowed",
-              ].join(" ")}
-            >
+            <button onClick={handleAddDocuments} disabled={!newOemFiles.length || analyzing} className={BTN}>
               {analyzing ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-                  </svg>
+                  <Spinner />
                   Analyzing…
                 </>
               ) : (
@@ -282,38 +259,38 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
 
       {/* CMMS scope — what the BOM already contains for this asset */}
       {result.cmms_scope && (
-        <div className="bg-white border border-slate-300 border-l-4 border-l-slate-400 rounded-sm px-4 py-2.5 text-sm text-slate-600 mb-4">
+        <div className={`${CARD} px-4 py-2.5 text-[14px] text-[#52525B] mb-4`}>
           Your CMMS already contains{" "}
-          <span className="font-semibold text-slate-800">{result.cmms_scope.asset_entry_count}</span> entries for
+          <span className="font-semibold text-[#0A0A0A]">{result.cmms_scope.asset_entry_count}</span> entries for
           this asset. The coverage figures below measure how much of your OEM documents those entries cover — not
           whether the BOM is empty.
         </div>
       )}
 
       {/* Summary stats */}
-      <div className={`grid grid-cols-2 ${result.cmms_scope ? "sm:grid-cols-5" : "sm:grid-cols-4"} gap-px bg-slate-300 border border-slate-300 rounded-sm overflow-hidden mb-4`}>
-        <StatCell value={pct(summary.match_rate)} label="Drawing coverage in CMMS" color="text-sky-600" />
+      <div className={`${CARD} grid grid-cols-2 ${result.cmms_scope ? "sm:grid-cols-5" : "sm:grid-cols-4"} mb-4 overflow-hidden`}>
+        <StatCell value={pct(summary.match_rate)} label="Drawing coverage in CMMS" color="text-[#0A0A0A]" />
         {result.cmms_scope && (
-          <StatCell value={result.cmms_scope.asset_entry_count} label="In CMMS for this asset" color="text-slate-700" />
+          <StatCell value={result.cmms_scope.asset_entry_count} label="In CMMS for this asset" color="text-[#0A0A0A]" />
         )}
-        <StatCell value={summary.matched_count} label="Matched" color="text-emerald-600" />
-        <StatCell value={summary.missing_count} label="Missing" color="text-red-600" />
-        <StatCell value={summary.needs_review_count ?? 0} label="Needs review" color="text-amber-600" />
+        <StatCell value={summary.matched_count} label="Matched" color={GOOD_TEXT} />
+        <StatCell value={summary.missing_count} label="Missing" color={BAD_TEXT} />
+        <StatCell value={summary.needs_review_count ?? 0} label="Needs review" color={WARN_TEXT} last />
       </div>
 
       {result.coverage_note && (
-        <div className="bg-sky-50 border border-sky-200 border-l-4 border-l-sky-400 rounded-sm px-4 py-2.5 text-sm text-sky-900 mb-3">
-          <span className="font-semibold">Document coverage: </span>{result.coverage_note}
+        <div className="bg-[#FAFAFA] border border-[#E4E4E7] rounded-lg px-4 py-2.5 text-[14px] text-[#3F3F46] mb-3">
+          <span className="font-semibold text-[#0A0A0A]">Document coverage: </span>{result.coverage_note}
         </div>
       )}
 
       {summary.critical_missing_count > 0 && (
-        <div className="bg-red-50 border border-red-200 border-l-4 border-l-red-500 rounded-sm px-4 py-2.5 text-sm text-red-700 font-medium mb-3">
+        <div className="bg-[#FEF2F2] rounded-lg px-4 py-2.5 text-[14px] text-[#B42318] font-medium mb-3">
           {summary.critical_missing_count} critical part{summary.critical_missing_count > 1 ? "s are" : " is"} missing from your CMMS — immediate attention recommended.
         </div>
       )}
       {(summary.visually_identified_count ?? 0) > 0 && (
-        <div className="bg-violet-50 border border-violet-200 border-l-4 border-l-violet-400 rounded-sm px-4 py-2.5 text-sm text-violet-700 font-medium mb-6">
+        <div className="bg-[#EFF6FF] rounded-lg px-4 py-2.5 text-[14px] text-[#1D4ED8] font-medium mb-6">
           {summary.visually_identified_count} part{summary.visually_identified_count === 1 ? "" : "s"} identified from visual inspection of drawings — not listed in any parts table.
         </div>
       )}
@@ -328,37 +305,37 @@ export default function AssetDetail({ asset, session, onBack, onUpdateAsset }: P
   );
 }
 
-function TitleBlockLabel({ children, last }: { children: React.ReactNode; last?: boolean }) {
+function HeaderLabel({ children, last }: { children: React.ReactNode; last?: boolean }) {
   return (
-    <div className={`px-3 py-2 bg-slate-100 border-r border-slate-300 ${last ? "" : "border-b"} text-[10px] uppercase tracking-[0.12em] text-slate-500 font-semibold flex items-center`}>
+    <div className={`px-4 py-2.5 bg-[#FAFAFA] border-r border-[#F1F1F3] ${last ? "" : "border-b"} text-[11px] uppercase tracking-[0.08em] text-[#71717A] font-medium flex items-center`}>
       {children}
     </div>
   );
 }
 
-function TitleBlockValue({ children, last }: { children: React.ReactNode; last?: boolean }) {
+function HeaderValue({ children, last }: { children: React.ReactNode; last?: boolean }) {
   return (
-    <div className={`px-3 py-2 ${last ? "" : "border-b"} border-slate-200 text-sm text-slate-700 min-w-0`}>
+    <div className={`px-4 py-2.5 ${last ? "" : "border-b"} border-[#F1F1F3] text-[14px] text-[#3F3F46] min-w-0`}>
       {children}
     </div>
   );
 }
 
-function StatCell({ value, label, color }: { value: string | number; label: string; color: string }) {
+function StatCell({ value, label, color, last }: { value: string | number; label: string; color: string; last?: boolean }) {
   return (
-    <div className="bg-white px-4 py-3">
-      <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
-      <p className="text-[10px] uppercase tracking-[0.08em] text-slate-500 mt-0.5">{label}</p>
+    <div className={`bg-white px-4 py-3.5 ${last ? "" : "sm:border-r sm:border-[#F1F1F3]"}`}>
+      <p className={`m-0 text-[24px] font-semibold tracking-[-0.02em] tabular-nums ${color}`}>{value}</p>
+      <p className="m-0 text-[11.5px] text-[#71717A] mt-0.5">{label}</p>
     </div>
   );
 }
 
 function SectionHeader({ color, label, count }: { color: string; label: string; count: number }) {
   return (
-    <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-700 mb-2 flex items-center gap-2">
-      <span className={`w-2 h-2 ${color} inline-block`} />
+    <h3 className="m-0 text-[14px] font-semibold text-[#0A0A0A] tracking-[-0.01em] mb-2 flex items-center gap-2">
+      <span className={`w-2 h-2 rounded-full ${color} inline-block`} />
       {label}
-      <span className="ml-1 font-normal normal-case tracking-normal text-slate-400">({count})</span>
+      <span className="ml-1 font-normal text-[#71717A]">({count})</span>
     </h3>
   );
 }
@@ -366,14 +343,14 @@ function SectionHeader({ color, label, count }: { color: string; label: string; 
 function SourceBadge({ doc }: { doc?: string }) {
   if (!doc) return null;
   return (
-    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-sm font-mono truncate max-w-[160px] inline-block align-middle" title={doc}>
+    <span className="text-[10.5px] text-[#71717A] bg-[#F4F4F5] px-1.5 py-0.5 rounded font-mono truncate max-w-[160px] inline-block align-middle" title={doc}>
       {doc}
     </span>
   );
 }
 
-const TH = "px-3 py-2 text-left text-[10px] uppercase tracking-[0.1em] text-slate-500 font-semibold whitespace-nowrap";
-const TD = "px-3 py-2.5 align-top";
+const TH = "px-4 py-2.5 text-left text-[11px] uppercase tracking-[0.06em] text-[#71717A] font-medium whitespace-nowrap";
+const TD = "px-4 py-3 align-top";
 
 function MissingSection({ items, showSource }: { items: Asset["result"]["missing_from_cmms"]; showSource: boolean }) {
   if (items.length === 0) return null;
@@ -384,58 +361,56 @@ function MissingSection({ items, showSource }: { items: Asset["result"]["missing
 
   return (
     <section>
-      <SectionHeader color="bg-red-500" label="Missing from CMMS" count={items.length} />
+      <SectionHeader color="bg-[#B42318]" label="Missing from CMMS" count={items.length} />
       {hasSourcing && (
-        <p className="text-xs text-slate-400 mb-2">
+        <p className="m-0 text-[12.5px] text-[#71717A] mb-2">
           Lead times are planning estimates based on sourcing category — not supplier quotes.
         </p>
       )}
-      <div className="bg-white border border-slate-300 rounded-sm overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+      <div className={`${CARD} overflow-x-auto`}>
+        <table className="w-full text-[14px] border-collapse">
           <thead>
-            <tr className="border-b-2 border-slate-300 bg-slate-50">
-              <th className={TH}>Part Number</th>
-              <th className={`${TH} w-full`}>Description / Action</th>
-              <th className={TH}>Criticality</th>
+            <tr className="border-b border-[#E4E4E7] bg-[#FAFAFA]">
+              <th className={TH}>Part no.</th>
+              <th className={`${TH} w-full`}>Description / action</th>
+              <th className={TH}>Priority</th>
               {hasSourcing && <th className={TH}>Sourcing</th>}
-              {hasSourcing && <th className={TH}>Typical Lead Time</th>}
+              {hasSourcing && <th className={TH}>Typical lead time</th>}
             </tr>
           </thead>
           <tbody>
             {sorted.map((item, i) => (
-              <tr key={i} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/60">
+              <tr key={i} className="border-b border-[#F1F1F3] last:border-b-0 hover:bg-[#FAFAFA]">
                 <td className={`${TD} whitespace-nowrap`}>
                   {item.oem_part_number ? (
-                    <span className="font-mono text-xs text-slate-700">{item.oem_part_number}</span>
+                    <span className="font-mono text-[12px] text-[#3F3F46]">{item.oem_part_number}</span>
                   ) : (
-                    <span className="text-xs text-slate-300">—</span>
+                    <span className="text-[12px] text-[#D4D4D8]">—</span>
                   )}
                   {item.source === "visual_inspection" && (
-                    <span className="block mt-1 w-fit text-[10px] font-medium text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-sm">
-                      VISUAL
+                    <span className="block mt-1 w-fit text-[10.5px] font-medium text-[#1D4ED8] bg-[#EFF6FF] px-1.5 py-0.5 rounded">
+                      Visual
                     </span>
                   )}
                 </td>
                 <td className={TD}>
-                  <p className="font-medium text-slate-800">{item.oem_description}</p>
-                  <p className="text-xs text-slate-500 mt-1">{item.reason}</p>
-                  {item.visual_note && <p className="text-xs text-violet-600 mt-0.5 italic">{item.visual_note}</p>}
-                  <p className="text-xs text-sky-700 mt-0.5">{item.recommendation}</p>
-                  {item.sourcing_note && <p className="text-xs text-slate-400 mt-0.5 italic">{item.sourcing_note}</p>}
+                  <p className="m-0 font-medium text-[#0A0A0A]">{item.oem_description}</p>
+                  <p className="m-0 text-[12.5px] text-[#52525B] mt-1">{item.reason}</p>
+                  {item.visual_note && <p className="m-0 text-[12.5px] text-[#1D4ED8] mt-0.5 italic">{item.visual_note}</p>}
+                  <p className="m-0 text-[12.5px] text-[#0A0A0A] font-medium mt-0.5">{item.recommendation}</p>
+                  {item.sourcing_note && <p className="m-0 text-[12.5px] text-[#71717A] mt-0.5 italic">{item.sourcing_note}</p>}
                   {showSource && <span className="block mt-1"><SourceBadge doc={item.source_doc} /></span>}
                 </td>
                 <td className={`${TD} whitespace-nowrap`}>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm border ${CRITICALITY_STYLES[item.criticality]}`}>
-                    {item.criticality}
-                  </span>
+                  <span className={CRITICALITY_PILLS[item.criticality]}>{CRITICALITY_LABELS[item.criticality]}</span>
                 </td>
                 {hasSourcing && (
-                  <td className={`${TD} whitespace-nowrap text-xs text-slate-600`}>
+                  <td className={`${TD} whitespace-nowrap text-[12.5px] text-[#3F3F46]`}>
                     {item.sourcing_category ? SOURCING_LABELS[item.sourcing_category] ?? item.sourcing_category : "—"}
                   </td>
                 )}
                 {hasSourcing && (
-                  <td className={`${TD} whitespace-nowrap text-xs text-slate-600 tabular-nums`}>
+                  <td className={`${TD} whitespace-nowrap text-[12.5px] text-[#3F3F46] tabular-nums`}>
                     {item.lead_time_estimate ?? "—"}
                   </td>
                 )}
@@ -459,19 +434,19 @@ function NeedsReviewSection({
 
   return (
     <section>
-      <SectionHeader color="bg-amber-400" label="Needs Review — possible data entry errors" count={items.length} />
-      <p className="text-xs text-slate-400 mb-2">
+      <SectionHeader color="bg-[#D97706]" label="Needs review — possible data entry errors" count={items.length} />
+      <p className="m-0 text-[12.5px] text-[#71717A] mb-2">
         The drawing and your CMMS disagree on these — verify which model is physically installed.
       </p>
       <div className="flex flex-col gap-2">
         {items.map((item, i) => (
-          <div key={i} className="bg-white rounded-sm border border-slate-300 border-l-4 border-l-amber-400 px-4 py-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+          <div key={i} className={`${CARD} px-5 py-4`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.1em] text-slate-400">OEM document says</p>
-                <p className="text-sm text-slate-800 mt-0.5">
+                <p className="m-0 text-[11px] uppercase tracking-[0.06em] text-[#71717A] font-medium">OEM document says</p>
+                <p className="m-0 text-[14px] text-[#0A0A0A] mt-1">
                   {item.oem_part_number && (
-                    <span className="font-mono text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-sm mr-1.5">
+                    <span className="font-mono text-[12px] bg-[#F4F4F5] text-[#3F3F46] px-1.5 py-0.5 rounded mr-1.5">
                       {item.oem_part_number}
                     </span>
                   )}
@@ -480,10 +455,10 @@ function NeedsReviewSection({
                 {showSource && <SourceBadge doc={item.source_doc} />}
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.1em] text-slate-400">Your CMMS has</p>
-                <p className="text-sm text-slate-800 mt-0.5">
+                <p className="m-0 text-[11px] uppercase tracking-[0.06em] text-[#71717A] font-medium">Your CMMS has</p>
+                <p className="m-0 text-[14px] text-[#0A0A0A] mt-1">
                   {item.cmms_part_number && (
-                    <span className="font-mono text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-sm mr-1.5">
+                    <span className="font-mono text-[12px] bg-[#F4F4F5] text-[#3F3F46] px-1.5 py-0.5 rounded mr-1.5">
                       {item.cmms_part_number}
                     </span>
                   )}
@@ -491,8 +466,8 @@ function NeedsReviewSection({
                 </p>
               </div>
             </div>
-            <p className="text-xs text-amber-700 mt-2">{item.issue}</p>
-            <p className="text-xs text-sky-700 mt-1">{item.recommendation}</p>
+            <p className={`m-0 text-[12.5px] ${WARN_TEXT} mt-2.5`}>{item.issue}</p>
+            <p className="m-0 text-[12.5px] text-[#0A0A0A] font-medium mt-1">{item.recommendation}</p>
           </div>
         ))}
       </div>
@@ -507,37 +482,37 @@ function MatchedSection({ items, showSource }: { items: Asset["result"]["matched
 
   return (
     <section>
-      <SectionHeader color="bg-emerald-500" label="Matched Parts" count={items.length} />
-      <div className="bg-white border border-slate-300 rounded-sm overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+      <SectionHeader color="bg-[#0F766E]" label="Matched parts" count={items.length} />
+      <div className={`${CARD} overflow-x-auto`}>
+        <table className="w-full text-[14px] border-collapse">
           <thead>
-            <tr className="border-b-2 border-slate-300 bg-slate-50">
-              <th className={`${TH} w-1/2`}>OEM Document</th>
-              <th className={`${TH} w-1/2`}>CMMS Entry</th>
+            <tr className="border-b border-[#E4E4E7] bg-[#FAFAFA]">
+              <th className={`${TH} w-1/2`}>OEM document</th>
+              <th className={`${TH} w-1/2`}>CMMS entry</th>
               <th className={TH}>Confidence</th>
             </tr>
           </thead>
           <tbody>
             {visible.map((item, i) => (
-              <tr key={i} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/60">
+              <tr key={i} className="border-b border-[#F1F1F3] last:border-b-0 hover:bg-[#FAFAFA]">
                 <td className={TD}>
                   {item.oem_part_number && (
-                    <span className="font-mono text-xs text-slate-700 block">{item.oem_part_number}</span>
+                    <span className="font-mono text-[12px] text-[#3F3F46] block">{item.oem_part_number}</span>
                   )}
-                  <span className="text-slate-700 text-xs">{item.oem_description}</span>
+                  <span className="text-[#3F3F46] text-[12.5px]">{item.oem_description}</span>
                   {showSource && <span className="block mt-0.5"><SourceBadge doc={item.source_doc} /></span>}
                 </td>
                 <td className={TD}>
                   {item.cmms_part_number && (
-                    <span className="font-mono text-xs text-slate-700 block">{item.cmms_part_number}</span>
+                    <span className="font-mono text-[12px] text-[#3F3F46] block">{item.cmms_part_number}</span>
                   )}
-                  <span className="text-slate-700 text-xs">{item.cmms_description}</span>
+                  <span className="text-[#3F3F46] text-[12.5px]">{item.cmms_description}</span>
                   {item.match_rationale && (
-                    <span className="block text-xs text-slate-400 italic mt-0.5">{item.match_rationale}</span>
+                    <span className="block text-[12.5px] text-[#71717A] italic mt-0.5">{item.match_rationale}</span>
                   )}
                 </td>
                 <td className={`${TD} whitespace-nowrap`}>
-                  <span className="text-xs font-semibold text-emerald-600 tabular-nums">{pct(item.confidence)}</span>
+                  <span className={`text-[12.5px] font-semibold ${GOOD_TEXT} tabular-nums`}>{pct(item.confidence)}</span>
                 </td>
               </tr>
             ))}
@@ -545,7 +520,7 @@ function MatchedSection({ items, showSource }: { items: Asset["result"]["matched
         </table>
       </div>
       {items.length > 6 && (
-        <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-sky-600 hover:underline cursor-pointer">
+        <button onClick={() => setOpen(!open)} className="mt-2 text-[13px] font-medium text-[#52525B] hover:text-[#0A0A0A] underline underline-offset-4 cursor-pointer">
           {open ? "Show less" : `Show all ${items.length} matched parts`}
         </button>
       )}
@@ -560,28 +535,28 @@ function ExtraSection({ items }: { items: Asset["result"]["extra_in_cmms"] }) {
 
   return (
     <section>
-      <SectionHeader color="bg-amber-400" label="In CMMS, not in these documents" count={items.length} />
-      <div className="bg-white border border-slate-300 rounded-sm overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+      <SectionHeader color="bg-[#D97706]" label="In CMMS, not in these documents" count={items.length} />
+      <div className={`${CARD} overflow-x-auto`}>
+        <table className="w-full text-[14px] border-collapse">
           <thead>
-            <tr className="border-b-2 border-slate-300 bg-slate-50">
-              <th className={TH}>CMMS Number</th>
+            <tr className="border-b border-[#E4E4E7] bg-[#FAFAFA]">
+              <th className={TH}>CMMS number</th>
               <th className={`${TH} w-full`}>Description</th>
             </tr>
           </thead>
           <tbody>
             {visible.map((item, i) => (
-              <tr key={i} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/60">
+              <tr key={i} className="border-b border-[#F1F1F3] last:border-b-0 hover:bg-[#FAFAFA]">
                 <td className={`${TD} whitespace-nowrap`}>
                   {item.cmms_part_number ? (
-                    <span className="font-mono text-xs text-slate-700">{item.cmms_part_number}</span>
+                    <span className="font-mono text-[12px] text-[#3F3F46]">{item.cmms_part_number}</span>
                   ) : (
-                    <span className="text-xs text-slate-300">—</span>
+                    <span className="text-[12px] text-[#D4D4D8]">—</span>
                   )}
                 </td>
                 <td className={TD}>
-                  <span className="text-slate-700 text-xs">{item.cmms_description}</span>
-                  {item.note && <span className="block text-xs text-slate-400 mt-0.5">{item.note}</span>}
+                  <span className="text-[#3F3F46] text-[12.5px]">{item.cmms_description}</span>
+                  {item.note && <span className="block text-[12.5px] text-[#71717A] mt-0.5">{item.note}</span>}
                 </td>
               </tr>
             ))}
@@ -589,7 +564,7 @@ function ExtraSection({ items }: { items: Asset["result"]["extra_in_cmms"] }) {
         </table>
       </div>
       {items.length > 6 && (
-        <button onClick={() => setOpen(!open)} className="mt-2 text-xs text-sky-600 hover:underline cursor-pointer">
+        <button onClick={() => setOpen(!open)} className="mt-2 text-[13px] font-medium text-[#52525B] hover:text-[#0A0A0A] underline underline-offset-4 cursor-pointer">
           {open ? "Show less" : `Show all ${items.length} extra entries`}
         </button>
       )}

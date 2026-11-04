@@ -45,14 +45,16 @@ The system prompt also instructs Claude to visually inspect drawings and flag co
 ## Branding (locked in)
 
 - Tagline: "Spare Parts Intelligence"
-- Color palette:
-  - Primary: deep navy `#1B2A4A`
-  - Accent (buttons/interactive): teal/sky `#0EA5E9`
-  - Critical/missing: red `#DC2626`
-  - Matched/success: green `#16A34A`
-  - Background: light `#F8FAFC`
-  - Text: charcoal `#1E293B`
-- Look and feel: clean, premium, professional industrial SaaS
+- Design system: "Executive Clean" — shared by the landing page (`app/page.tsx`, styles inline) and the tool (`components/ui.tsx` exports the tokens; every tool component imports from there). Keep both in sync.
+- Font: Inter (loaded in `app/layout.tsx`).
+- Color palette (zinc/near-black, no navy/teal anymore):
+  - Text/primary buttons: near-black `#0A0A0A`; hover `#27272A`
+  - Grays: borders `#E4E4E7` / hairlines `#F1F1F3`, muted text `#71717A` / `#52525B` / `#3F3F46`, surfaces `#FAFAFA` / `#F7F7F8` / chips `#F4F4F5`
+  - Critical/missing: text `#B42318` on `#FEF2F2`
+  - Important/warning: text `#92400E` on `#FFFBEB` (bars `#D97706`)
+  - Matched/success: text `#0F766E` on `#ECFDF5`
+  - Visual-inspection/info: text `#1D4ED8` on `#EFF6FF`
+- Look and feel: clean, premium, editorial industrial SaaS — rounded-xl cards, hairline table rows, pill status badges
 
 ## Business context & key decisions
 

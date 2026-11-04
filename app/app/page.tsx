@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Asset, Session } from "@/lib/types";
 import { SAMPLE_SESSION, SAMPLE_ASSETS } from "@/lib/sampleData";
 import { rememberSession, saveAssets } from "@/lib/persistence";
+import { GHOST, Logo, Spinner } from "@/components/ui";
 import ServiceChooser from "@/components/ServiceChooser";
 import ComingSoon from "@/components/ComingSoon";
 import StartScreen from "@/components/StartScreen";
@@ -116,31 +117,27 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#F7F7F8] text-[#0A0A0A]">
       {/* Persistent header */}
-      <header className="bg-[#1B2A4A] border-b border-[#253d6a] sticky top-0 z-10">
+      <header className="bg-white border-b border-[#F1F1F3] sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center gap-3">
           <button
             onClick={() => setView("home")}
-            className="flex items-center gap-3 cursor-pointer"
+            className="flex items-center gap-2.5 cursor-pointer"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500 shrink-0">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
+            <Logo />
             <div className="text-left">
-              <p className="text-sm font-bold text-white leading-tight tracking-tight">SparesView</p>
-              <p className="text-xs text-sky-300 leading-tight">Spare Parts Intelligence</p>
+              <p className="text-[15px] font-semibold text-[#0A0A0A] leading-tight tracking-[-0.01em]">SparesView</p>
+              <p className="text-[11px] text-[#71717A] leading-tight">Spare Parts Intelligence</p>
             </div>
           </button>
 
           {session && BOM_SERVICE_VIEWS.includes(view) && (
             <>
-              <span className="text-[#3a5580] ml-2 text-lg font-light">|</span>
+              <span className="text-[#E4E4E7] ml-2 text-lg font-light">|</span>
               <div className="ml-1">
-                <p className="text-xs font-semibold text-slate-200">{session.clientName}</p>
-                <p className="text-xs text-slate-400">{session.plantName}</p>
+                <p className="text-xs font-semibold text-[#0A0A0A]">{session.clientName}</p>
+                <p className="text-xs text-[#71717A]">{session.plantName}</p>
               </div>
             </>
           )}
@@ -155,7 +152,7 @@ export default function Home() {
                 window.history.replaceState(null, "", window.location.pathname);
                 setView("start");
               }}
-              className="ml-auto text-xs text-slate-300 hover:text-white border border-[#3a5580] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#253d6a] transition-colors"
+              className={`${GHOST} ml-auto !h-9 !text-[13px]`}
             >
               New Session
             </button>
@@ -166,11 +163,8 @@ export default function Home() {
       {/* View router */}
       {restoring && (
         <div className="min-h-[calc(100vh-57px)] flex flex-col items-center justify-center gap-3">
-          <svg className="w-6 h-6 text-sky-500 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-          </svg>
-          <p className="text-sm text-slate-500">Loading saved session…</p>
+          <Spinner className="w-6 h-6 text-[#0A0A0A]" />
+          <p className="text-sm text-[#52525B]">Loading saved session…</p>
         </div>
       )}
 
