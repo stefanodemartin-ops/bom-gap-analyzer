@@ -3,9 +3,8 @@
 
 export const CONTACT_EMAIL = "stefano@sparesview.com";
 
-// Paste your Calendly (or Google Calendar appointment) link here when ready.
-// While empty, the "Book a demo" flow shows the contact form only.
-export const BOOKING_URL = "";
+// Calendly booking link shown above the demo form.
+export const BOOKING_URL = "https://calendly.com/stefanodemartin/free-15-min-consultation";
 
 export type PricingTier = {
   name: string;
